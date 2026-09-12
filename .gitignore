@@ -1,0 +1,48 @@
+# Java / Spring Boot
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+mobile/node_modules/
+mobile/.expo/
+
+# Python
+ai-service/__pycache__/
+ai-service/**/*.pyc
+ai-service/.venv/
+ai-service/venv/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Environment / Secrets
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build
+build/
+out/

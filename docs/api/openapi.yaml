@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: Online Verification System for Weighing and Measuring Instruments
+  description: >
+    Shared API contract for SIH26036 — digitizes the Legal Metrology
+    verification lifecycle from instrument registration through
+    QR-based public certificate verification.
+  version: "1.0"
+servers:
+  - url: http://localhost:8080/api
+    description: Local development
+tags:
+  - name: Auth
+  - name: Instruments
+  - name: Applications
+  - name: Assignments
+  - name: Inspections
+  - name: Certificates
+  - name: Public
+  - name: Notifications
+  - name: Analytics
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  refreshToken: { type: string }
+                  user: { $ref: "#/components/schemas/User" }
+        "401":
+          description: Invalid credentials
+
+  /users/me:
+    get:
+      tags: [Auth]
+      summary: Get the current authenticated user
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+
+  /instruments:
+    get:
+      tags: [Instruments]
+      summary: List instruments (scoped to caller's role/jurisdiction)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: establishmentId, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Paged list of instruments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Instrument" }
+                  total: { type: integer }
+    post:
+      tags: [Instruments]
+      summary: Register a new instrument
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstrumentCreateRequest" }
+      responses:
+        "201":
+          description: Instrument registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instrument" }
+
+  /instruments/{id}:
+    get:
+      tags: [Instruments]
+      summary: Get the full Digital Instrument Passport
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Instrument passport
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstrumentPassport" }
+        "404":
+          description: Not found
+
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List applications (scoped to caller)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: instrumentId, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Application" }
+    post:
+      tags: [Applications]
+      summary: Submit a verification or re-verification application
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationCreateRequest" }
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Application" }
+
+  /applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get application detail and status history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Application detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationDetail" }
+
+  /applications/{id}/schedule:
+    post:
+      tags: [Applications]
+      summary: Schedule an appointment for an assigned application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scheduledAt]
+              properties:
+                scheduledAt: { type: string, format: date-time }
+                location: { type: string }
+      responses:
+        "200":
+          description: Appointment scheduled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appointment" }
+
+  /assignments/auto:
+    post:
+      tags: [Assignments]
+      summary: Run automatic LMO/GATC assignment for an application
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId]
+              properties:
+                applicationId: { type: string }
+      responses:
+        "200":
+          description: Assignment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assignment" }
+
+  /assignments/manual:
+    post:
+      tags: [Assignments]
+      summary: Manually assign an application to an LMO/GATC
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId, assigneeId]
+              properties:
+                applicationId: { type: string }
+                assigneeId: { type: string }
+      responses:
+        "200":
+          description: Assignment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assignment" }
+
+  /assignments/{id}/reassign:
+    post:
+      tags: [Assignments]
+      summary: Reassign an existing assignment (requires reason; audited)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newAssigneeId, reason]
+              properties:
+                newAssigneeId: { type: string }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Reassignment recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assignment" }
+
+  /assignments:
+    get:
+      tags: [Assignments]
+      summary: List assignments (scoped to caller)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Assignment" }
+
+  /inspections:
+    post:
+      tags: [Inspections]
+      summary: Create/start an inspection record for an appointment
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [appointmentId]
+              properties:
+                appointmentId: { type: string }
+      responses:
+        "201":
+          description: Inspection created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Inspection" }
+
+  /inspections/{id}:
+    get:
+      tags: [Inspections]
+      summary: Get inspection detail
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Inspection detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Inspection" }
+
+  /inspections/{id}/measurements:
+    post:
+      tags: [Inspections]
+      summary: Record measurements/checklist results for an inspection
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MeasurementBatch" }
+      responses:
+        "200":
+          description: Measurements recorded
+
+  /inspections/{id}/evidence:
+    post:
+      tags: [Inspections]
+      summary: Upload photo/GPS evidence for an inspection
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+                latitude: { type: number }
+                longitude: { type: number }
+      responses:
+        "200":
+          description: Evidence stored
+
+  /inspections/{id}/submit:
+    post:
+      tags: [Inspections]
+      summary: Submit final inspection outcome (PASS/FAIL/REINSPECTION_REQUIRED)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                result:
+                  type: string
+                  enum: [PASS, FAIL, REINSPECTION_REQUIRED]
+                remarks: { type: string }
+      responses:
+        "200":
+          description: Inspection finalized; certificate generated on PASS
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Inspection" }
+
+  /certificates:
+    post:
+      tags: [Certificates]
+      summary: Generate a certificate for a passing inspection
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inspectionId]
+              properties:
+                inspectionId: { type: string }
+      responses:
+        "201":
+          description: Certificate created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certificate" }
+
+  /certificates/{id}:
+    get:
+      tags: [Certificates]
+      summary: Get certificate detail (authenticated view)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Certificate detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certificate" }
+
+  /public/verify/{token}:
+    get:
+      tags: [Public]
+      summary: Public, no-login certificate verification via QR token
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Certificate authenticity/status (minimized fields)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicCertificateView" }
+        "404":
+          description: Unknown or invalid token — returns NOT_FOUND, never internal detail
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for the current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Notification" }
+
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Role-scoped dashboard KPIs (Business/LMO/GATC/Government Admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Dashboard KPI payload (shape varies by caller role)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role:
+          type: string
+          enum: [BUSINESS, LMO, GATC, GOVERNMENT_ADMIN]
+        jurisdiction: { type: string }
+
+    Instrument:
+      type: object
+      properties:
+        id:
+          type: string
+          example: LM-INST-2026-000123
+        establishmentId: { type: string }
+        type: { type: string }
+        manufacturer: { type: string }
+        model: { type: string }
+        serialNumber: { type: string }
+        capacityRange: { type: string }
+        status:
+          type: string
+          enum: [REGISTERED, PENDING_VERIFICATION, VERIFIED, EXPIRED, REJECTED]
+
+    InstrumentPassport:
+      allOf:
+        - $ref: "#/components/schemas/Instrument"
+        - type: object
+          properties:
+            applications:
+              type: array
+              items: { $ref: "#/components/schemas/Application" }
+            certificates:
+              type: array
+              items: { $ref: "#/components/schemas/Certificate" }
+
+    InstrumentCreateRequest:
+      type: object
+      required: [establishmentId, type, manufacturer, model, serialNumber]
+      properties:
+        establishmentId: { type: string }
+        type: { type: string }
+        manufacturer: { type: string }
+        model: { type: string }
+        serialNumber: { type: string }
+        capacityRange: { type: string }
+
+    Application:
+      type: object
+      properties:
+        id: { type: string }
+        instrumentId: { type: string }
+        type:
+          type: string
+          enum: [INITIAL_VERIFICATION, RE_VERIFICATION]
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - SUBMITTED
+            - UNDER_REVIEW
+            - APPROVED
+            - REJECTED
+            - ASSIGNMENT_PENDING
+            - ASSIGNED
+            - SCHEDULED
+            - INSPECTION_PENDING
+            - UNDER_INSPECTION
+            - PASSED
+            - FAILED
+            - REINSPECTION_REQUIRED
+            - CERTIFICATE_GENERATED
+            - COMPLETED
+            - CANCELLED
+        submittedAt: { type: string, format: date-time }
+
+    ApplicationCreateRequest:
+      type: object
+      required: [instrumentId, type]
+      properties:
+        instrumentId: { type: string }
+        type:
+          type: string
+          enum: [INITIAL_VERIFICATION, RE_VERIFICATION]
+
+    ApplicationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Application"
+        - type: object
+          properties:
+            statusHistory:
+              type: array
+              items:
+                type: object
+                properties:
+                  status: { type: string }
+                  actor: { type: string }
+                  timestamp: { type: string, format: date-time }
+
+    Assignment:
+      type: object
+      properties:
+        id: { type: string }
+        applicationId: { type: string }
+        assigneeId: { type: string }
+        method:
+          type: string
+          enum: [AUTO, MANUAL, REASSIGNED]
+        score: { type: number }
+        reason: { type: string }
+
+    Appointment:
+      type: object
+      properties:
+        id: { type: string }
+        assignmentId: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        location: { type: string }
+        status:
+          type: string
+          enum: [SCHEDULED, RESCHEDULED, COMPLETED, CANCELLED]
+
+    Inspection:
+      type: object
+      properties:
+        id: { type: string }
+        appointmentId: { type: string }
+        result:
+          type: string
+          enum: [PENDING, PASS, FAIL, REINSPECTION_REQUIRED]
+        remarks: { type: string }
+        evidenceUrls:
+          type: array
+          items: { type: string }
+
+    MeasurementBatch:
+      type: object
+      properties:
+        checklistId: { type: string }
+        readings:
+          type: array
+          items:
+            type: object
+            properties:
+              parameter: { type: string }
+              observedValue: { type: string }
+              tolerance: { type: string }
+              withinTolerance: { type: boolean }
+
+    Certificate:
+      type: object
+      properties:
+        certificateNumber: { type: string }
+        instrumentId: { type: string }
+        inspectionId: { type: string }
+        verificationDate: { type: string, format: date }
+        validUntil: { type: string, format: date }
+        status:
+          type: string
+          enum: [VALID, EXPIRED, REVOKED, SUSPENDED]
+        qrToken: { type: string }
+
+    PublicCertificateView:
+      type: object
+      description: Minimized fields only — no personal or internal departmental data
+      properties:
+        certificateNumber: { type: string }
+        instrumentType: { type: string }
+        manufacturer: { type: string }
+        model: { type: string }
+        serialNumber: { type: string }
+        capacityRange: { type: string }
+        verificationDate: { type: string, format: date }
+        validUntil: { type: string, format: date }
+        issuer: { type: string }
+        status:
+          type: string
+          enum: [VALID, EXPIRED, REVOKED, SUSPENDED, NOT_FOUND]
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        message: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }

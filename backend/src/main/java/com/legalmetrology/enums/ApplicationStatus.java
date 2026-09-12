@@ -1,0 +1,20 @@
+package com.legalmetrology.enums;
+
+public enum ApplicationStatus {
+    DRAFT,
+    SUBMITTED,
+    UNDER_REVIEW,
+    APPROVED,
+    REJECTED,
+    ASSIGNMENT_PENDING,
+    ASSIGNED,
+    SCHEDULED,
+    INSPECTION_PENDING,
+    UNDER_INSPECTION,
+    PASSED,
+    FAILED,
+    REINSPECTION_REQUIRED,
+    CERTIFICATE_GENERATED,
+    COMPLETED,
+    CANCELLED
+}
