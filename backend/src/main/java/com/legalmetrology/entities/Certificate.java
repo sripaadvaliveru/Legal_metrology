@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.legalmetrology.enums.CertificateStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,15 +13,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "certificates")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Certificate {
+public class Certificate extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "certificate_number", unique = true, nullable = false)
-    private String certificateNumber; // e.g. CERT-LM-2026-000123
+    private String certificateNumber;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;

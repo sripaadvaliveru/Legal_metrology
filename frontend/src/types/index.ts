@@ -83,4 +83,24 @@ export interface DashboardKPIs {
   expiredInstruments: number;
   failedInspections: number;
   compliancePercentage: number;
+  totalBusinesses: number;
+  totalLmos: number;
+  totalCertificates: number;
+  completedApplications: number;
+  todayInspections: number;
+  assignedInspections: number;
+  overdueInspections: number;
+  pendingTests: number;
+  todayAppointments: number;
+  completedTests: number;
+  failedTests: number;
+  recentActivity: RecentActivity[];
+}
+
+export interface RecentActivity {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  status: string;
 }

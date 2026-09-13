@@ -7,6 +7,7 @@ import com.legalmetrology.services.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @PostMapping("/auto")
+    @PreAuthorize("hasAnyRole('DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Assignment> autoAssign(
             @RequestBody java.util.Map<String, String> request,
             Authentication authentication) {
@@ -27,6 +29,7 @@ public class AssignmentController {
     }
 
     @PostMapping("/manual")
+    @PreAuthorize("hasAnyRole('DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Assignment> manualAssign(
             @Valid @RequestBody ManualAssignmentRequest request,
             Authentication authentication) {
@@ -35,6 +38,7 @@ public class AssignmentController {
     }
 
     @PostMapping("/{id}/reassign")
+    @PreAuthorize("hasAnyRole('DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Assignment> reassign(
             @PathVariable String id,
             @Valid @RequestBody ReassignRequest request,
@@ -44,6 +48,7 @@ public class AssignmentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<List<Assignment>> getAssignments(
             @RequestParam String applicationId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsByApplication(applicationId));

@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.legalmetrology.enums.InspectionResult;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "inspections")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Inspection {
+public class Inspection extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -50,6 +51,7 @@ public class Inspection {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "inspection", cascade = CascadeType.ALL)
     @Builder.Default
     private List<Measurement> measurements = new ArrayList<>();

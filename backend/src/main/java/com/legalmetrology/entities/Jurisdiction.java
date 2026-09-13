@@ -6,7 +6,7 @@ import lombok.*;
 @Entity
 @Table(name = "jurisdictions")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Jurisdiction {
+public class Jurisdiction extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

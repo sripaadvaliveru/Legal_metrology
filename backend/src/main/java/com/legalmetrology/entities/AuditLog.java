@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,12 +10,13 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "audit_logs")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class AuditLog {
+public class AuditLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

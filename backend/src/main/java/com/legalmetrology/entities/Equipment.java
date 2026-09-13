@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "equipment")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Equipment {
+public class Equipment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

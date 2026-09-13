@@ -1,5 +1,6 @@
 package com.legalmetrology.services;
 
+import com.legalmetrology.dto.MeasurementBatchRequest;
 import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.CertificateStatus;
 import com.legalmetrology.enums.InspectionResult;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -54,6 +57,48 @@ public class InspectionService {
         }
 
         return inspection;
+    }
+
+    @Transactional
+    public List<Measurement> recordMeasurements(String inspectionId, MeasurementBatchRequest request) {
+        Inspection inspection = inspectionRepository.findById(inspectionId)
+                .orElseThrow(() -> new RuntimeException("Inspection not found"));
+
+        List<Measurement> measurements = new ArrayList<>();
+        for (MeasurementBatchRequest.MeasurementItem item : request.getReadings()) {
+            Measurement measurement = Measurement.builder()
+                    .inspection(inspection)
+                    .parameter(item.getParameter())
+                    .observedValue(item.getObservedValue())
+                    .tolerance(item.getTolerance())
+                    .withinTolerance(item.getWithinTolerance())
+                    .build();
+            measurements.add(measurement);
+        }
+
+        inspection.setMeasurements(measurements);
+        inspectionRepository.save(inspection);
+
+        return measurements;
+    }
+
+    @Transactional
+    public Inspection addEvidence(String inspectionId, String evidenceUrl) {
+        Inspection inspection = inspectionRepository.findById(inspectionId)
+                .orElseThrow(() -> new RuntimeException("Inspection not found"));
+
+        inspection.getEvidenceUrls().add(evidenceUrl);
+        return inspectionRepository.save(inspection);
+    }
+
+    @Transactional
+    public Inspection updateGpsCoordinates(String inspectionId, Double latitude, Double longitude) {
+        Inspection inspection = inspectionRepository.findById(inspectionId)
+                .orElseThrow(() -> new RuntimeException("Inspection not found"));
+
+        inspection.setLatitude(latitude);
+        inspection.setLongitude(longitude);
+        return inspectionRepository.save(inspection);
     }
 
     @Transactional

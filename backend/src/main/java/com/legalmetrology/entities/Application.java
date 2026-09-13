@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.ApplicationType;
 import jakarta.persistence.*;
@@ -14,14 +15,14 @@ import java.util.Set;
 @Entity
 @Table(name = "applications")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Application {
+public class Application extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "application_number", unique = true, nullable = false)
-    private String applicationNumber; // e.g. APP-2026-000123
+    private String applicationNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instrument_id", nullable = false)
@@ -43,14 +44,17 @@ public class Application {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<ApplicationStatusHistory> statusHistory = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Assignment> assignments = new HashSet<>();
 
+    @JsonIgnore
     @OneToOne(mappedBy = "application", cascade = CascadeType.ALL)
     private Appointment appointment;
 

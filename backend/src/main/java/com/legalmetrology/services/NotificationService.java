@@ -32,11 +32,31 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
-    public List<Notification> getUserNotifications(String userId) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public Notification createNotificationByEmail(String email, String type, String message,
+                                                   String entityType, String entityId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        Notification notification = Notification.builder()
+                .user(user)
+                .type(type)
+                .message(message)
+                .entityType(entityType)
+                .entityId(entityId)
+                .build();
+
+        return notificationRepository.save(notification);
     }
 
-    public long getUnreadCount(String userId) {
-        return notificationRepository.countByUserIdAndIsReadFalse(userId);
+    public List<Notification> getUserNotifications(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+    }
+
+    public long getUnreadCount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        return notificationRepository.countByUserIdAndIsReadFalse(user.getId());
     }
 }

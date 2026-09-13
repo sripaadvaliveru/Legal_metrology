@@ -1,8 +1,10 @@
 package com.legalmetrology.services;
 
 import com.legalmetrology.dto.ApplicationCreateRequest;
+import com.legalmetrology.dto.ScheduleRequest;
 import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.ApplicationStatus;
+import com.legalmetrology.enums.AppointmentStatus;
 import com.legalmetrology.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ public class ApplicationService {
     private final InstrumentRepository instrumentRepository;
     private final UserRepository userRepository;
     private final ApplicationStatusHistoryRepository statusHistoryRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final AssignmentRepository assignmentRepository;
 
     private static final AtomicLong APP_COUNTER = new AtomicLong(1);
 
@@ -80,5 +84,43 @@ public class ApplicationService {
         statusHistoryRepository.save(history);
 
         return application;
+    }
+
+    @Transactional
+    public Appointment scheduleApplication(String applicationId, ScheduleRequest request, String actor) {
+        Application application = getApplicationById(applicationId);
+
+        List<Assignment> assignments = assignmentRepository.findByApplicationId(applicationId);
+        if (assignments.isEmpty()) {
+            throw new RuntimeException("Application must be assigned before scheduling");
+        }
+        Assignment assignment = assignments.get(0);
+
+        Appointment appointment = Appointment.builder()
+                .application(application)
+                .assignment(assignment)
+                .scheduledAt(request.getScheduledAt())
+                .location(request.getLocation())
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        appointment = appointmentRepository.save(appointment);
+
+        application.setAppointment(appointment);
+        application.setStatus(ApplicationStatus.SCHEDULED);
+        applicationRepository.save(application);
+
+        ApplicationStatusHistory history = ApplicationStatusHistory.builder()
+                .application(application)
+                .status(ApplicationStatus.SCHEDULED)
+                .actor(actor)
+                .build();
+        statusHistoryRepository.save(history);
+
+        return appointment;
+    }
+
+    public List<Application> getAllApplications() {
+        return applicationRepository.findAll();
     }
 }

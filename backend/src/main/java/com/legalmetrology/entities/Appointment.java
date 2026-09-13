@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.legalmetrology.enums.AppointmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,12 +12,13 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "appointments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Appointment {
+public class Appointment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;

@@ -92,6 +92,12 @@
             <version>2.6.0</version>
         </dependency>
 
+        <!-- Jackson Hibernate module for lazy proxy serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate6</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

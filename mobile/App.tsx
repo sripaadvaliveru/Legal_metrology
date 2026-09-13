@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './src/screens/LoginScreen';
 import AssignmentsScreen from './src/screens/AssignmentsScreen';
 import InspectionScreen from './src/screens/InspectionScreen';
@@ -38,19 +39,37 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token
-    setIsLoading(false);
+    const loadStoredAuth = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('auth_token');
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (e) {
+        console.error('Failed to load auth state:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadStoredAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     const res = await authApi.login(email, password);
-    setToken(res.data.token);
-    setUser(res.data.user);
+    const { token: newToken, user: userData } = res.data;
+    setToken(newToken);
+    setUser(userData);
+    await AsyncStorage.setItem('auth_token', newToken);
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
     setToken(null);
     setUser(null);
+    await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('user');
   };
 
   if (isLoading) {

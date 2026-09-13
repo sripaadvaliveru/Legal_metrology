@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "violations")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Violation {
+public class Violation extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

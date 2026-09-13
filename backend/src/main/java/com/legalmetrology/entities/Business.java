@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,7 +13,7 @@ import java.util.Set;
 @Entity
 @Table(name = "businesses")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Business {
+public class Business extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -40,10 +41,12 @@ public class Business {
 
     private String email;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Establishment> establishments = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<User> users = new HashSet<>();

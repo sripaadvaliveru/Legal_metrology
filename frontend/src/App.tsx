@@ -56,12 +56,39 @@ function AppRoutes() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
+        {/* Index route - role-based dashboard */}
         <Route index element={
           user?.role === 'BUSINESS' ? <BusinessDashboard /> :
           user?.role === 'LMO' ? <LmoDashboard /> :
           user?.role === 'GATC' ? <GatcDashboard /> :
           <AdminDashboard />
         } />
+
+        {/* Business routes */}
+        <Route path="instruments" element={<BusinessDashboard />} />
+        <Route path="applications" element={<BusinessDashboard />} />
+        <Route path="certificates" element={<BusinessDashboard />} />
+        <Route path="notifications" element={<BusinessDashboard />} />
+
+        {/* LMO routes */}
+        <Route path="assignments" element={<LmoDashboard />} />
+        <Route path="schedule" element={<LmoDashboard />} />
+
+        {/* GATC routes */}
+        <Route path="tests" element={<GatcDashboard />} />
+        <Route path="appointments" element={<GatcDashboard />} />
+        <Route path="equipment" element={<GatcDashboard />} />
+
+        {/* Admin routes */}
+        <Route path="overview" element={<AdminDashboard />} />
+        <Route path="analytics" element={<AdminDashboard />} />
+        <Route path="enforcement" element={<AdminDashboard />} />
+        <Route path="users" element={<AdminDashboard />} />
+        <Route path="roles" element={<AdminDashboard />} />
+        <Route path="districts" element={<AdminDashboard />} />
+        <Route path="jurisdictions" element={<AdminDashboard />} />
+        <Route path="rules" element={<AdminDashboard />} />
+        <Route path="audit" element={<AdminDashboard />} />
       </Route>
 
       <Route path="*" element={<Navigate to={getHomeRoute()} replace />} />

@@ -4,6 +4,7 @@ import com.legalmetrology.entities.Notification;
 import com.legalmetrology.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,11 +19,13 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<List<Notification>> getNotifications(Authentication authentication) {
         return ResponseEntity.ok(notificationService.getUserNotifications(authentication.getName()));
     }
 
     @GetMapping("/unread-count")
+    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Long>> getUnreadCount(Authentication authentication) {
         return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(authentication.getName())));
     }

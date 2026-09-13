@@ -1,5 +1,6 @@
 package com.legalmetrology.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,7 +13,7 @@ import java.util.Set;
 @Entity
 @Table(name = "establishments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Establishment {
+public class Establishment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,6 +36,7 @@ public class Establishment {
 
     private Double longitude;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = false)
     private Business business;
@@ -43,6 +45,7 @@ public class Establishment {
     @JoinColumn(name = "jurisdiction_id")
     private Jurisdiction jurisdiction;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "establishment", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Instrument> instruments = new HashSet<>();
