@@ -50,13 +50,7 @@ public class InspectionService {
         inspection.setRemarks(remarks);
         inspection.setCompletedAt(java.time.LocalDateTime.now());
 
-        inspection = inspectionRepository.save(inspection);
-
-        if (result == InspectionResult.PASS) {
-            generateCertificate(inspection);
-        }
-
-        return inspection;
+        return inspectionRepository.save(inspection);
     }
 
     @Transactional
@@ -130,6 +124,7 @@ public class InspectionService {
         return certificateRepository.save(certificate);
     }
 
+    @Transactional(readOnly = true)
     public Inspection getInspectionById(String id) {
         return inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inspection not found"));

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
 import java.util.List;
@@ -55,14 +56,17 @@ public class InstrumentService {
         return instrumentRepository.save(instrument);
     }
 
+    @Transactional(readOnly = true)
     public Page<Instrument> getInstruments(Pageable pageable) {
         return instrumentRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
     public List<Instrument> getInstrumentsByEstablishment(String establishmentId) {
         return instrumentRepository.findByEstablishmentId(establishmentId);
     }
 
+    @Transactional(readOnly = true)
     public Instrument getInstrumentById(String id) {
         return instrumentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instrument not found"));

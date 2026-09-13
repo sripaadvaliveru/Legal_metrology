@@ -1,19 +1,11 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "lib": ["es2019"],
-    "jsx": "react-native",
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
+    "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "extends": "expo/tsconfig.base"
 }

@@ -31,13 +31,19 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserResponse userResponse = UserResponse.builder()
+        UserResponse.UserResponseBuilder responseBuilder = UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId())
-                .build();
+                .jurisdiction(user.getJurisdictionId());
+
+        if (user.getBusiness() != null) {
+            responseBuilder.businessId(user.getBusiness().getId());
+            responseBuilder.businessName(user.getBusiness().getName());
+        }
+
+        UserResponse userResponse = responseBuilder.build();
 
         return AuthResponse.builder()
                 .token(token)
@@ -74,12 +80,18 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return UserResponse.builder()
+        UserResponse.UserResponseBuilder responseBuilder = UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId())
-                .build();
+                .jurisdiction(user.getJurisdictionId());
+
+        if (user.getBusiness() != null) {
+            responseBuilder.businessId(user.getBusiness().getId());
+            responseBuilder.businessName(user.getBusiness().getName());
+        }
+
+        return responseBuilder.build();
     }
 }

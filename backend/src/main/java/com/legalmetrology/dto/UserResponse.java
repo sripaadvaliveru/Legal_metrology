@@ -16,4 +16,6 @@ public class UserResponse {
     private String email;
     private Role role;
     private String jurisdiction;
+    private String businessId;
+    private String businessName;
 }

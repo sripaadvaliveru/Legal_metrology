@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CertificateService {
@@ -16,11 +18,13 @@ public class CertificateService {
     private final CertificateRepository certificateRepository;
     private final InspectionRepository inspectionRepository;
 
+    @Transactional(readOnly = true)
     public Certificate getCertificateById(String id) {
         return certificateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Certificate not found"));
     }
 
+    @Transactional(readOnly = true)
     public Certificate getCertificateByNumber(String number) {
         return certificateRepository.findByCertificateNumber(number)
                 .orElseThrow(() -> new RuntimeException("Certificate not found"));
@@ -36,6 +40,11 @@ public class CertificateService {
         Certificate certificate = getCertificateById(id);
         certificate.setStatus(CertificateStatus.REVOKED);
         return certificateRepository.save(certificate);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Certificate> getCertificatesByBusinessId(String businessId) {
+        return certificateRepository.findByBusinessId(businessId);
     }
 
     @Transactional

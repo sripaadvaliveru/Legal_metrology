@@ -58,12 +58,14 @@ public class ApplicationService {
         return application;
     }
 
+    @Transactional(readOnly = true)
     public List<Application> getApplicationsByUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return applicationRepository.findByApplicantId(user.getId());
     }
 
+    @Transactional(readOnly = true)
     public Application getApplicationById(String id) {
         return applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -120,6 +122,7 @@ public class ApplicationService {
         return appointment;
     }
 
+    @Transactional(readOnly = true)
     public List<Application> getAllApplications() {
         return applicationRepository.findAll();
     }

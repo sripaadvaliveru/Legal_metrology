@@ -5,6 +5,9 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  jurisdiction?: string;
+  businessId?: string;
+  businessName?: string;
 }
 
 export interface AuthResponse {
@@ -13,44 +16,150 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface Assignment {
+export interface Establishment {
   id: string;
-  applicationId: string;
-  assigneeId: string;
-  method: string;
-  score?: number;
+  name: string;
+  address: string;
+  city: string;
+  district: string;
+  state: string;
 }
 
-export interface Appointment {
-  id: string;
-  assignmentId: string;
-  scheduledAt: string;
-  location?: string;
-  status: string;
+export interface Business {
+  businessId: string;
+  businessName: string;
+  registrationNumber: string;
+  gstNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  establishments: Establishment[];
 }
+
+export type InstrumentStatus = 'REGISTERED' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'EXPIRED' | 'REJECTED';
 
 export interface Instrument {
   id: string;
   instrumentId: string;
-  type: string;
+  instrumentType?: { id: string; name: string };
   manufacturer: string;
   model: string;
   serialNumber: string;
   capacityRange?: string;
+  status: InstrumentStatus;
+  establishmentId: string;
+}
+
+export type ApplicationStatus =
+  | 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'
+  | 'ASSIGNMENT_PENDING' | 'ASSIGNED' | 'SCHEDULED' | 'INSPECTION_PENDING'
+  | 'UNDER_INSPECTION' | 'PASSED' | 'FAILED' | 'REINSPECTION_REQUIRED'
+  | 'CERTIFICATE_GENERATED' | 'COMPLETED' | 'CANCELLED';
+
+export type ApplicationType = 'INITIAL_VERIFICATION' | 'RE_VERIFICATION';
+
+export interface Application {
+  id: string;
+  applicationNumber: string;
+  instrumentId: string;
+  instrument?: Instrument;
+  type: ApplicationType;
+  status: ApplicationStatus;
+  submittedAt?: string;
+  createdAt?: string;
+}
+
+export type CertificateStatus = 'VALID' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED';
+
+export interface Certificate {
+  id: string;
+  certificateNumber: string;
+  instrumentId: string;
+  instrument?: Instrument;
+  inspectionId: string;
+  verificationDate: string;
+  validUntil: string;
+  status: CertificateStatus;
+  qrToken: string;
+  issuedBy?: string;
+}
+
+export interface Appointment {
+  id: string;
+  applicationId: string;
+  application?: Application;
+  assignmentId: string;
+  scheduledAt: string;
+  location?: string;
   status: string;
+  createdAt?: string;
 }
 
 export interface Inspection {
   id: string;
   appointmentId: string;
+  inspectorId: string;
   result: string;
   remarks?: string;
   measurements: Measurement[];
+  evidenceUrls: string[];
+  latitude?: number;
+  longitude?: number;
+  startedAt?: string;
+  completedAt?: string;
 }
 
 export interface Measurement {
+  id?: string;
   parameter: string;
   observedValue: string;
   tolerance?: string;
   withinTolerance?: boolean;
+}
+
+export interface Notification {
+  id: string;
+  type: string;
+  message: string;
+  isRead: boolean;
+  entityType?: string;
+  entityId?: string;
+  createdAt: string;
+}
+
+export interface DashboardKPIs {
+  totalInstruments: number;
+  verifiedInstruments: number;
+  pendingApplications: number;
+  expiringSoon: number;
+  expiredInstruments: number;
+  failedInspections: number;
+  compliancePercentage: number;
+  totalBusinesses: number;
+  totalLmos: number;
+  totalCertificates: number;
+  completedApplications: number;
+  todayInspections: number;
+  assignedInspections: number;
+  overdueInspections: number;
+  pendingTests: number;
+  todayAppointments: number;
+  completedTests: number;
+  failedTests: number;
+  recentActivity: RecentActivity[];
+}
+
+export interface RecentActivity {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  status: string;
+}
+
+export interface InstrumentType {
+  id: string;
+  name: string;
+  description?: string;
+  validityMonths: number;
 }

@@ -18,7 +18,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#1f2937"
       },
-      "package": "com.legalmetrology.mobile"
+      "package": "com.legalmetrology.mobile",
+      "usesCleartextTraffic": true
     }
   }
 }

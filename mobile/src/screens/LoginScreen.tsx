@@ -28,7 +28,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Legal Metrology</Text>
-        <Text style={styles.subtitle}>LMO Field Application</Text>
+        <Text style={styles.subtitle}>Verification System</Text>
 
         <TextInput
           style={styles.input}
@@ -54,6 +54,12 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Sign In</Text>
           )}
         </TouchableOpacity>
+
+        <Text style={styles.hint}>
+          Business: business@test.com{'\n'}
+          LMO: lmo@test.com{'\n'}
+          Password: password123
+        </Text>
       </View>
     </View>
   );
@@ -67,4 +73,5 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
   button: { backgroundColor: '#1f2937', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  hint: { fontSize: 12, color: '#9ca3af', textAlign: 'center', marginTop: 16, lineHeight: 18 },
 });

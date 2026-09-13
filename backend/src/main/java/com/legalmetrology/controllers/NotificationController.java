@@ -29,4 +29,10 @@ public class NotificationController {
     public ResponseEntity<Map<String, Long>> getUnreadCount(Authentication authentication) {
         return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(authentication.getName())));
     }
+
+    @PutMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<Notification> markAsRead(@PathVariable String id, Authentication authentication) {
+        return ResponseEntity.ok(notificationService.markAsRead(id, authentication.getName()));
+    }
 }
