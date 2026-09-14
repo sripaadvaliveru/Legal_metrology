@@ -46,6 +46,8 @@ export interface Instrument {
   model: string;
   serialNumber: string;
   capacityRange?: string;
+  yearOfManufacture?: number;
+  usage?: string;
   status: InstrumentStatus;
   establishmentId: string;
 }
@@ -88,6 +90,7 @@ export interface Appointment {
   id: string;
   applicationId: string;
   application?: Application;
+  assignment?: Assignment;
   assignmentId: string;
   scheduledAt: string;
   location?: string;
@@ -107,6 +110,7 @@ export interface Inspection {
   longitude?: number;
   startedAt?: string;
   completedAt?: string;
+  previousInspectionId?: string;
 }
 
 export interface Measurement {
@@ -115,6 +119,18 @@ export interface Measurement {
   observedValue: string;
   tolerance?: string;
   withinTolerance?: boolean;
+  remarks?: string;
+}
+
+export interface Assignment {
+  id: string;
+  application?: Application;
+  assignee?: User;
+  method: string;
+  score?: number;
+  reason?: string;
+  previousAssigneeId?: string;
+  assignedAt: string;
 }
 
 export interface Notification {
@@ -162,4 +178,13 @@ export interface InstrumentType {
   name: string;
   description?: string;
   validityMonths: number;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  instrumentType?: InstrumentType;
+  templateName: string;
+  description?: string;
+  checklistItems: string;
+  version: number;
 }

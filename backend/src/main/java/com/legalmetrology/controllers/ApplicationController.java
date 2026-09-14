@@ -42,6 +42,12 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.getAllApplications());
     }
 
+    @GetMapping("/by-instrument/{instrumentId}")
+    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<List<Application>> getApplicationsByInstrument(@PathVariable String instrumentId) {
+        return ResponseEntity.ok(applicationService.getApplicationsByInstrumentId(instrumentId));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Application> getApplication(@PathVariable String id) {

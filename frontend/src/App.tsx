@@ -8,6 +8,7 @@ import BusinessDashboard from '@/modules/user/BusinessDashboard';
 import LmoDashboard from '@/modules/lmo/LmoDashboard';
 import GatcDashboard from '@/modules/gatc/GatcDashboard';
 import AdminDashboard from '@/modules/admin/AdminDashboard';
+import RulesChecklists from '@/modules/admin/RulesChecklists';
 import PublicVerify from '@/modules/public-verification/PublicVerify';
 
 const queryClient = new QueryClient();
@@ -87,7 +88,7 @@ function AppRoutes() {
         <Route path="roles" element={<AdminDashboard />} />
         <Route path="districts" element={<AdminDashboard />} />
         <Route path="jurisdictions" element={<AdminDashboard />} />
-        <Route path="rules" element={<AdminDashboard />} />
+        <Route path="rules" element={<RulesChecklists />} />
         <Route path="audit" element={<AdminDashboard />} />
       </Route>
 

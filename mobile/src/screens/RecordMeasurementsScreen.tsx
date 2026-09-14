@@ -9,12 +9,13 @@ interface MeasurementItem {
   parameter: string;
   observedValue: string;
   tolerance: string;
+  remarks: string;
 }
 
 export default function RecordMeasurementsScreen({ route, navigation }: any) {
   const { inspectionId } = route.params;
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([
-    { parameter: '', observedValue: '', tolerance: '' },
+    { parameter: '', observedValue: '', tolerance: '', remarks: '' },
   ]);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -28,11 +29,12 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
           observedValue: m.observedValue,
           tolerance: m.tolerance || undefined,
           withinTolerance: undefined,
+          remarks: m.remarks || undefined,
         }));
       await inspectionApi.recordMeasurements(inspectionId, readings);
     },
     onSuccess: () => {
-      navigation.navigate('SubmitInspection', { inspectionId });
+      navigation.navigate('InspectionReview', { inspectionId });
     },
     onError: (err: any) => {
       Alert.alert('Error', err.response?.data?.message || 'Failed to record measurements');
@@ -64,7 +66,7 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
   };
 
   const addMeasurement = () => {
-    setMeasurements([...measurements, { parameter: '', observedValue: '', tolerance: '' }]);
+    setMeasurements([...measurements, { parameter: '', observedValue: '', tolerance: '', remarks: '' }]);
   };
 
   const updateMeasurement = (index: number, field: keyof MeasurementItem, value: string) => {
@@ -80,10 +82,10 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>GPS Location</Text>
-        <TouchableOpacity style={styles.gpsBtn} onPress={captureGps} disabled={gpsLoading}>
+        <TouchableOpacity activeOpacity={0.7} style={styles.gpsBtn} onPress={captureGps} disabled={gpsLoading}>
           <Ionicons name={gpsLoading ? "sync-outline" : "location-outline"} size={20} color="#fff" />
           <Text style={styles.gpsBtnText}>
             {gpsLoading ? 'Capturing...' : gpsCoords ? `Captured: ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}` : 'Capture GPS Location'}
@@ -94,17 +96,17 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Measurements</Text>
-          <TouchableOpacity onPress={addMeasurement}>
+          <TouchableOpacity activeOpacity={0.7} onPress={addMeasurement}>
             <Ionicons name="add-circle-outline" size={24} color="#3b82f6" />
           </TouchableOpacity>
         </View>
 
         {measurements.map((m, index) => (
-          <View key={index} style={styles.measurementCard}>
+          <View key={`m-${index}-${m.parameter}`} style={styles.measurementCard}>
             <View style={styles.measurementHeader}>
               <Text style={styles.measurementNum}>#{index + 1}</Text>
               {measurements.length > 1 && (
-                <TouchableOpacity onPress={() => removeMeasurement(index)}>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => removeMeasurement(index)}>
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 </TouchableOpacity>
               )}
@@ -114,6 +116,7 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
               placeholder="Parameter (e.g. Weight)"
               value={m.parameter}
               onChangeText={(v) => updateMeasurement(index, 'parameter', v)}
+              returnKeyType="next"
             />
             <TextInput
               style={styles.input}
@@ -121,24 +124,34 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
               value={m.observedValue}
               onChangeText={(v) => updateMeasurement(index, 'observedValue', v)}
               keyboardType="numeric"
+              returnKeyType="next"
             />
             <TextInput
               style={styles.input}
               placeholder="Tolerance (optional)"
               value={m.tolerance}
               onChangeText={(v) => updateMeasurement(index, 'tolerance', v)}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Remarks (optional)"
+              value={m.remarks}
+              onChangeText={(v) => updateMeasurement(index, 'remarks', v)}
+              returnKeyType="done"
             />
           </View>
         ))}
       </View>
 
       <TouchableOpacity
+        activeOpacity={0.7}
         style={[styles.submitBtn, recordMutation.isPending && styles.submitBtnDisabled]}
         onPress={() => recordMutation.mutate()}
         disabled={recordMutation.isPending}
       >
         <Text style={styles.submitBtnText}>
-          {recordMutation.isPending ? 'Saving...' : 'Save & Continue'}
+          {recordMutation.isPending ? 'Saving...' : 'Save & Review'}
         </Text>
       </TouchableOpacity>
     </ScrollView>

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs } from '@/types';
+import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs, InstrumentType, ChecklistTemplate } from '@/types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
@@ -91,6 +91,23 @@ export const notificationApi = {
 // Analytics
 export const analyticsApi = {
   dashboard: () => api.get<DashboardKPIs>('/analytics/dashboard'),
+};
+
+// Instrument Types
+export const instrumentTypeApi = {
+  list: () => api.get<InstrumentType[]>('/instrument-types'),
+};
+
+// Checklist Templates
+export const checklistApi = {
+  list: (instrumentTypeId?: string) =>
+    api.get<ChecklistTemplate[]>('/checklist-templates', { params: instrumentTypeId ? { instrumentTypeId } : {} }),
+  get: (id: string) => api.get<ChecklistTemplate>(`/checklist-templates/${id}`),
+  create: (data: { instrumentTypeId: string; templateName: string; description: string; checklistItems: string }) =>
+    api.post<ChecklistTemplate>('/checklist-templates', data),
+  update: (id: string, data: { templateName: string; description: string; checklistItems: string }) =>
+    api.put<ChecklistTemplate>(`/checklist-templates/${id}`, data),
+  delete: (id: string) => api.delete(`/checklist-templates/${id}`),
 };
 
 export default api;

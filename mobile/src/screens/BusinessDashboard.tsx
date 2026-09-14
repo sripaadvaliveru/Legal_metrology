@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../App';
-import { analyticsApi } from '../services/api';
+import { analyticsApi, notificationApi } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge, { getStatusVariant } from '../components/Badge';
 
@@ -12,6 +12,13 @@ export default function BusinessDashboard({ navigation }: any) {
   const { data: kpis, isLoading, refetch, isError } = useQuery({
     queryKey: ['dashboard-kpis'],
     queryFn: () => analyticsApi.dashboard().then(res => res.data),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+  });
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: () => notificationApi.unreadCount().then(res => res.data),
+    staleTime: 30000,
   });
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -51,11 +58,11 @@ export default function BusinessDashboard({ navigation }: any) {
   ];
 
   const menuItems = [
-    { label: 'My Instruments', icon: 'hardware-chip-outline' as const, screen: 'Instruments' },
+    { label: 'My Instruments', icon: 'hardware-chip-outline' as const, screen: 'InstrumentsTab' },
     { label: 'Register Instrument', icon: 'add-circle-outline' as const, screen: 'RegisterInstrument' },
-    { label: 'My Applications', icon: 'document-text-outline' as const, screen: 'Applications' },
+    { label: 'My Applications', icon: 'document-text-outline' as const, screen: 'ApplicationsTab' },
     { label: 'My Certificates', icon: 'ribbon-outline' as const, screen: 'Certificates' },
-    { label: 'Notifications', icon: 'notifications-outline' as const, screen: 'Notifications' },
+    { label: 'Notifications', icon: 'notifications-outline' as const, screen: 'Notifications', badge: unreadData?.count },
   ];
 
   return (
@@ -63,10 +70,10 @@ export default function BusinessDashboard({ navigation }: any) {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Welcome,</Text>
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.business}>{user?.businessName}</Text>
+          <Text style={styles.name}>{user?.name || 'User'}</Text>
+          <Text style={styles.business}>{user?.businessName || ''}</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleLogout} style={styles.logoutBtn}>
           <Ionicons name="log-out-outline" size={24} color="#ef4444" />
         </TouchableOpacity>
       </View>
@@ -81,16 +88,33 @@ export default function BusinessDashboard({ navigation }: any) {
         ))}
       </View>
 
+      {kpis?.compliancePercentage != null && (
+        <View style={styles.complianceSection}>
+          <Text style={styles.sectionTitle}>Compliance</Text>
+          <View style={styles.complianceBar}>
+            <View style={[styles.complianceFill, { width: `${Math.min(kpis.compliancePercentage, 100)}%` }]} />
+          </View>
+          <Text style={styles.complianceText}>{Math.min(kpis.compliancePercentage, 100)}% compliant</Text>
+        </View>
+      )}
+
       <View style={styles.menuSection}>
         {menuItems.map((item) => (
           <TouchableOpacity
             key={item.label}
+            activeOpacity={0.7}
             style={styles.menuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
             <Ionicons name={item.icon} size={24} color="#1f2937" />
             <Text style={styles.menuLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            {item.badge ? (
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>{item.badge}</Text>
+              </View>
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -134,4 +158,10 @@ const styles = StyleSheet.create({
   activityContent: { flex: 1 },
   activityDesc: { fontSize: 14, color: '#1f2937' },
   activityTime: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
+  complianceSection: { padding: 16 },
+  complianceBar: { height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
+  complianceFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 4 },
+  complianceText: { fontSize: 13, color: '#6b7280' },
+  badgeContainer: { backgroundColor: '#ef4444', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
 });

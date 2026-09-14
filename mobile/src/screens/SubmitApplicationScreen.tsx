@@ -7,9 +7,12 @@ import EmptyState from '../components/EmptyState';
 import Badge, { getStatusVariant } from '../components/Badge';
 import type { Instrument } from '../types';
 
-export default function SubmitApplicationScreen({ navigation }: any) {
-  const [selectedInstrument, setSelectedInstrument] = useState('');
-  const [appType, setAppType] = useState<'INITIAL_VERIFICATION' | 'RE_VERIFICATION'>('INITIAL_VERIFICATION');
+export default function SubmitApplicationScreen({ route, navigation }: any) {
+  const preSelectedInstrumentId = route.params?.instrumentId;
+  const [selectedInstrument, setSelectedInstrument] = useState(preSelectedInstrumentId || '');
+  const [appType, setAppType] = useState<'INITIAL_VERIFICATION' | 'RE_VERIFICATION'>(
+    preSelectedInstrumentId ? 'RE_VERIFICATION' : 'INITIAL_VERIFICATION'
+  );
 
   const { data: instruments, isLoading } = useQuery({
     queryKey: ['my-instruments'],
@@ -42,13 +45,14 @@ export default function SubmitApplicationScreen({ navigation }: any) {
   if (isLoading) return <LoadingSpinner />;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select Instrument *</Text>
         {instruments && instruments.length > 0 ? (
           instruments.map((inst) => (
             <TouchableOpacity
               key={inst.id}
+              activeOpacity={0.7}
               style={[styles.instrumentCard, selectedInstrument === inst.id && styles.instrumentCardActive]}
               onPress={() => setSelectedInstrument(inst.id)}
             >
@@ -73,6 +77,7 @@ export default function SubmitApplicationScreen({ navigation }: any) {
         <Text style={styles.sectionTitle}>Application Type *</Text>
         <View style={styles.chipContainer}>
           <TouchableOpacity
+            activeOpacity={0.7}
             style={[styles.chip, appType === 'INITIAL_VERIFICATION' && styles.chipActive]}
             onPress={() => setAppType('INITIAL_VERIFICATION')}
           >
@@ -81,6 +86,7 @@ export default function SubmitApplicationScreen({ navigation }: any) {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            activeOpacity={0.7}
             style={[styles.chip, appType === 'RE_VERIFICATION' && styles.chipActive]}
             onPress={() => setAppType('RE_VERIFICATION')}
           >
@@ -92,6 +98,7 @@ export default function SubmitApplicationScreen({ navigation }: any) {
       </View>
 
       <TouchableOpacity
+        activeOpacity={0.7}
         style={[styles.submitBtn, (!selectedInstrument || createMutation.isPending) && styles.submitBtnDisabled]}
         onPress={handleSubmit}
         disabled={!selectedInstrument || createMutation.isPending}

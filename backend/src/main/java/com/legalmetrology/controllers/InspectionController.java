@@ -5,6 +5,9 @@ import com.legalmetrology.dto.MeasurementBatchRequest;
 import com.legalmetrology.entities.Certificate;
 import com.legalmetrology.entities.Inspection;
 import com.legalmetrology.entities.Measurement;
+import com.legalmetrology.entities.User;
+import com.legalmetrology.repositories.InspectionRepository;
+import com.legalmetrology.repositories.UserRepository;
 import com.legalmetrology.services.InspectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,8 @@ import java.util.Map;
 public class InspectionController {
 
     private final InspectionService inspectionService;
+    private final InspectionRepository inspectionRepository;
+    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('LMO')")
@@ -31,10 +36,35 @@ public class InspectionController {
                 request.get("appointmentId"), authentication.getName()));
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC')")
+    public ResponseEntity<List<Inspection>> getMyInspections(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(inspectionRepository.findByInspectorId(user.getId()));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Inspection> getInspection(@PathVariable String id) {
         return ResponseEntity.ok(inspectionService.getInspectionById(id));
+    }
+
+    @GetMapping("/{id}/measurements")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<List<Measurement>> getMeasurements(@PathVariable String id) {
+        Inspection inspection = inspectionService.getInspectionById(id);
+        return ResponseEntity.ok(inspection.getMeasurements());
+    }
+
+    @GetMapping("/{id}/previous")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<Inspection> getPreviousInspection(@PathVariable String id) {
+        Inspection inspection = inspectionService.getInspectionById(id);
+        if (inspection.getPreviousInspectionId() != null) {
+            return ResponseEntity.ok(inspectionService.getInspectionById(inspection.getPreviousInspectionId()));
+        }
+        return ResponseEntity.ok(inspection);
     }
 
     @PostMapping("/{id}/submit")

@@ -2,6 +2,7 @@ package com.legalmetrology.controllers;
 
 import com.legalmetrology.entities.Appointment;
 import com.legalmetrology.entities.User;
+import com.legalmetrology.enums.AppointmentStatus;
 import com.legalmetrology.repositories.AppointmentRepository;
 import com.legalmetrology.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,14 @@ public class AppointmentController {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         return ResponseEntity.ok(appointment);
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC')")
+    public ResponseEntity<Appointment> completeAppointment(@PathVariable String id) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        return ResponseEntity.ok(appointmentRepository.save(appointment));
     }
 }

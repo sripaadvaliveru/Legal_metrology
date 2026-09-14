@@ -56,6 +56,9 @@ public class Inspection extends BaseEntity {
     @Builder.Default
     private List<Measurement> measurements = new ArrayList<>();
 
+    @Column(name = "previous_inspection_id")
+    private String previousInspectionId;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { applicationApi } from '../services/api';
@@ -25,7 +25,7 @@ function getStepIndex(status: string): number {
   return order[status] ?? -1;
 }
 
-export default function ApplicationDetailScreen({ route }: any) {
+export default function ApplicationDetailScreen({ route, navigation }: any) {
   const { applicationId } = route.params;
 
   const { data: application, isLoading, isError } = useQuery({
@@ -39,6 +39,9 @@ export default function ApplicationDetailScreen({ route }: any) {
       <View style={styles.centered}>
         <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
         <Text style={styles.errorText}>Failed to load application details</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.retryBtn}>
+          <Text style={styles.retryBtnText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -120,7 +123,9 @@ export default function ApplicationDetailScreen({ route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  errorText: { fontSize: 16, color: '#6b7280', marginTop: 12 },
+  errorText: { fontSize: 16, color: '#6b7280', marginTop: 12, marginBottom: 20 },
+  retryBtn: { backgroundColor: '#1f2937', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+  retryBtnText: { color: '#fff', fontWeight: '600' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   appNumber: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
   card: { backgroundColor: '#fff', borderRadius: 12, margin: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },

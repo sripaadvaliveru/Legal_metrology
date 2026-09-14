@@ -126,4 +126,9 @@ public class ApplicationService {
     public List<Application> getAllApplications() {
         return applicationRepository.findAll();
     }
+
+    @Transactional(readOnly = true)
+    public List<Application> getApplicationsByInstrumentId(String instrumentId) {
+        return applicationRepository.findByInstrumentId(instrumentId);
+    }
 }

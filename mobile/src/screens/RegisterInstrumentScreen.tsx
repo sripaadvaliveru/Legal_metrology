@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../App';
 import { instrumentApi, businessApi, instrumentTypeApi } from '../services/api';
@@ -58,81 +58,88 @@ export default function RegisterInstrumentScreen({ navigation }: any) {
   if (loadingBusiness || loadingTypes) return <LoadingSpinner />;
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Instrument Type *</Text>
-        <View style={styles.chipContainer}>
-          {instrumentTypes?.map((type) => (
-            <TouchableOpacity
-              key={type.id}
-              style={[styles.chip, selectedType === type.id && styles.chipActive]}
-              onPress={() => setSelectedType(type.id)}
-            >
-              <Text style={[styles.chipText, selectedType === type.id && styles.chipTextActive]}>
-                {type.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Instrument Type *</Text>
+            <View style={styles.chipContainer}>
+              {instrumentTypes?.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  activeOpacity={0.7}
+                  style={[styles.chip, selectedType === type.id && styles.chipActive]}
+                  onPress={() => setSelectedType(type.id)}
+                >
+                  <Text style={[styles.chipText, selectedType === type.id && styles.chipTextActive]}>
+                    {type.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Establishment *</Text>
-        <View style={styles.chipContainer}>
-          {business?.establishments?.map((est) => (
-            <TouchableOpacity
-              key={est.id}
-              style={[styles.chip, selectedEstablishment === est.id && styles.chipActive]}
-              onPress={() => setSelectedEstablishment(est.id)}
-            >
-              <Text style={[styles.chipText, selectedEstablishment === est.id && styles.chipTextActive]}>
-                {est.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Establishment *</Text>
+            <View style={styles.chipContainer}>
+              {business?.establishments?.map((est) => (
+                <TouchableOpacity
+                  key={est.id}
+                  activeOpacity={0.7}
+                  style={[styles.chip, selectedEstablishment === est.id && styles.chipActive]}
+                  onPress={() => setSelectedEstablishment(est.id)}
+                >
+                  <Text style={[styles.chipText, selectedEstablishment === est.id && styles.chipTextActive]}>
+                    {est.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Manufacturer *</Text>
-        <TextInput style={styles.input} value={manufacturer} onChangeText={setManufacturer} placeholder="e.g. Avery India" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Manufacturer *</Text>
+            <TextInput style={styles.input} value={manufacturer} onChangeText={setManufacturer} placeholder="e.g. Avery India" returnKeyType="next" />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Model *</Text>
-        <TextInput style={styles.input} value={model} onChangeText={setModel} placeholder="e.g. WS-500" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Model *</Text>
+            <TextInput style={styles.input} value={model} onChangeText={setModel} placeholder="e.g. WS-500" returnKeyType="next" />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Serial Number *</Text>
-        <TextInput style={styles.input} value={serialNumber} onChangeText={setSerialNumber} placeholder="e.g. SN-12345" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Serial Number *</Text>
+            <TextInput style={styles.input} value={serialNumber} onChangeText={setSerialNumber} placeholder="e.g. SN-12345" returnKeyType="next" autoCapitalize="none" />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Capacity Range</Text>
-        <TextInput style={styles.input} value={capacityRange} onChangeText={setCapacityRange} placeholder="e.g. 0-500kg" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Capacity Range</Text>
+            <TextInput style={styles.input} value={capacityRange} onChangeText={setCapacityRange} placeholder="e.g. 0-500kg" returnKeyType="next" />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Year of Manufacture</Text>
-        <TextInput style={styles.input} value={yearOfManufacture} onChangeText={setYearOfManufacture} placeholder="e.g. 2024" keyboardType="numeric" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Year of Manufacture</Text>
+            <TextInput style={styles.input} value={yearOfManufacture} onChangeText={setYearOfManufacture} placeholder="e.g. 2024" keyboardType="numeric" returnKeyType="next" maxLength={4} />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Usage</Text>
-        <TextInput style={styles.input} value={usage} onChangeText={setUsage} placeholder="e.g. Commercial weighing" />
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Usage</Text>
+            <TextInput style={styles.input} value={usage} onChangeText={setUsage} placeholder="e.g. Commercial weighing" returnKeyType="done" />
+          </View>
 
-      <TouchableOpacity
-        style={[styles.submitBtn, createMutation.isPending && styles.submitBtnDisabled]}
-        onPress={handleSubmit}
-        disabled={createMutation.isPending}
-      >
-        <Text style={styles.submitBtnText}>
-          {createMutation.isPending ? 'Registering...' : 'Register Instrument'}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.submitBtn, createMutation.isPending && styles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={createMutation.isPending}
+          >
+            <Text style={styles.submitBtnText}>
+              {createMutation.isPending ? 'Registering...' : 'Register Instrument'}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -20,7 +20,7 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
       <View style={styles.centered}>
         <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
         <Text style={styles.errorText}>Failed to load instrument details</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -29,6 +29,10 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
 
   const handleApplyVerification = () => {
     navigation.navigate('SubmitApplication', { instrumentId: instrument.id });
+  };
+
+  const handleVerificationHistory = () => {
+    navigation.navigate('VerificationHistory', { instrumentId: instrument.id, instrumentName: instrument.instrumentType?.name });
   };
 
   return (
@@ -66,10 +70,28 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
             <Text style={styles.cardValue}>{instrument.capacityRange}</Text>
           </View>
         )}
+        {instrument.yearOfManufacture && (
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>Year of Manufacture</Text>
+            <Text style={styles.cardValue}>{instrument.yearOfManufacture}</Text>
+          </View>
+        )}
+        {instrument.usage && (
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>Usage</Text>
+            <Text style={styles.cardValue}>{instrument.usage}</Text>
+          </View>
+        )}
       </View>
 
+      <TouchableOpacity activeOpacity={0.7} style={styles.historyBtn} onPress={handleVerificationHistory}>
+        <Ionicons name="time-outline" size={20} color="#3b82f6" />
+        <Text style={styles.historyBtnText}>Verification History</Text>
+        <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
+      </TouchableOpacity>
+
       {(instrument.status === 'VERIFIED' || instrument.status === 'EXPIRED' || instrument.status === 'REGISTERED') && (
-        <TouchableOpacity style={styles.applyBtn} onPress={handleApplyVerification}>
+        <TouchableOpacity activeOpacity={0.7} style={styles.applyBtn} onPress={handleApplyVerification}>
           <Ionicons name="document-text-outline" size={20} color="#fff" />
           <Text style={styles.applyBtnText}>
             {instrument.status === 'EXPIRED' ? 'Apply for Re-verification' : 'Apply for Verification'}
@@ -94,6 +116,8 @@ const styles = StyleSheet.create({
   cardLabel: { fontSize: 14, color: '#6b7280' },
   cardValue: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
   divider: { height: 1, backgroundColor: '#e5e7eb', marginVertical: 4 },
+  historyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, padding: 16, gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  historyBtnText: { flex: 1, fontSize: 15, fontWeight: '500', color: '#1f2937' },
   applyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1f2937', borderRadius: 12, marginHorizontal: 16, marginBottom: 32, padding: 16, gap: 8 },
   applyBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

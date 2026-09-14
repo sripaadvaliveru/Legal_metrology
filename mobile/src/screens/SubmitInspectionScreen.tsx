@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
 import { inspectionApi, certificateApi } from '../services/api';
 
@@ -10,8 +11,7 @@ export default function SubmitInspectionScreen({ route, navigation }: any) {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      if (!result) throw new Error('Please select PASS or FAIL');
-      await inspectionApi.submit(inspectionId, result, remarks || undefined);
+      await inspectionApi.submit(inspectionId, result!, remarks || undefined);
       if (result === 'PASS') {
         await certificateApi.generate(inspectionId);
       }
@@ -29,12 +29,21 @@ export default function SubmitInspectionScreen({ route, navigation }: any) {
     },
   });
 
+  const handleSubmit = () => {
+    if (!result) {
+      Alert.alert('Error', 'Please select PASS or FAIL');
+      return;
+    }
+    submitMutation.mutate();
+  };
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Inspection Result *</Text>
         <View style={styles.resultRow}>
           <TouchableOpacity
+            activeOpacity={0.7}
             style={[styles.resultBtn, result === 'PASS' && styles.resultBtnPassActive]}
             onPress={() => setResult('PASS')}
           >
@@ -43,6 +52,7 @@ export default function SubmitInspectionScreen({ route, navigation }: any) {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            activeOpacity={0.7}
             style={[styles.resultBtn, result === 'FAIL' && styles.resultBtnFailActive]}
             onPress={() => setResult('FAIL')}
           >
@@ -74,9 +84,19 @@ export default function SubmitInspectionScreen({ route, navigation }: any) {
         </View>
       )}
 
+      {result === 'FAIL' && (
+        <View style={styles.warningBox}>
+          <Ionicons name="warning-outline" size={18} color="#92400e" />
+          <Text style={styles.warningText}>
+            Marking as FAIL will set the application status to Re-inspection Required. The business will need to apply for re-verification.
+          </Text>
+        </View>
+      )}
+
       <TouchableOpacity
+        activeOpacity={0.7}
         style={[styles.submitBtn, (!result || submitMutation.isPending) && styles.submitBtnDisabled]}
-        onPress={() => submitMutation.mutate()}
+        onPress={handleSubmit}
         disabled={!result || submitMutation.isPending}
       >
         <Text style={styles.submitBtnText}>
@@ -101,6 +121,8 @@ const styles = StyleSheet.create({
   textArea: { height: 100 },
   infoBox: { backgroundColor: '#eff6ff', borderRadius: 8, padding: 12, marginBottom: 12 },
   infoText: { fontSize: 14, color: '#1e40af' },
+  warningBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#fef3c7', borderRadius: 8, padding: 12, marginBottom: 12 },
+  warningText: { fontSize: 13, color: '#92400e', flex: 1 },
   submitBtn: { backgroundColor: '#1f2937', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },

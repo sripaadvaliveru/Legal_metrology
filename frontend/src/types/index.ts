@@ -104,3 +104,19 @@ export interface RecentActivity {
   timestamp: string;
   status: string;
 }
+
+export interface InstrumentType {
+  id: string;
+  name: string;
+  description?: string;
+  validityMonths: number;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  instrumentType?: InstrumentType;
+  templateName: string;
+  description?: string;
+  checklistItems: string;
+  version: number;
+}

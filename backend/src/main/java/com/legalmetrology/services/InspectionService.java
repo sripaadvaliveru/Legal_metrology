@@ -2,6 +2,7 @@ package com.legalmetrology.services;
 
 import com.legalmetrology.dto.MeasurementBatchRequest;
 import com.legalmetrology.entities.*;
+import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.CertificateStatus;
 import com.legalmetrology.enums.InspectionResult;
 import com.legalmetrology.repositories.*;
@@ -23,6 +24,7 @@ public class InspectionService {
     private final CertificateRepository certificateRepository;
     private final InstrumentRepository instrumentRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
 
     @Transactional
     public Inspection createInspection(String appointmentId, String inspectorEmail) {
@@ -49,6 +51,13 @@ public class InspectionService {
         inspection.setResult(result);
         inspection.setRemarks(remarks);
         inspection.setCompletedAt(java.time.LocalDateTime.now());
+
+        if (result == InspectionResult.FAIL) {
+            Appointment appointment = inspection.getAppointment();
+            Application application = appointment.getApplication();
+            application.setStatus(ApplicationStatus.REINSPECTION_REQUIRED);
+            applicationRepository.save(application);
+        }
 
         return inspectionRepository.save(inspection);
     }

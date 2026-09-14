@@ -3,6 +3,9 @@ package com.legalmetrology.controllers;
 import com.legalmetrology.dto.ManualAssignmentRequest;
 import com.legalmetrology.dto.ReassignRequest;
 import com.legalmetrology.entities.Assignment;
+import com.legalmetrology.entities.User;
+import com.legalmetrology.repositories.AssignmentRepository;
+import com.legalmetrology.repositories.UserRepository;
 import com.legalmetrology.services.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,8 @@ import java.util.List;
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
+    private final AssignmentRepository assignmentRepository;
+    private final UserRepository userRepository;
 
     @PostMapping("/auto")
     @PreAuthorize("hasAnyRole('DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
@@ -45,6 +50,14 @@ public class AssignmentController {
             Authentication authentication) {
         return ResponseEntity.ok(assignmentService.reassign(
                 id, request.getNewAssigneeId(), request.getReason(), authentication.getName()));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC')")
+    public ResponseEntity<List<Assignment>> getMyAssignments(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(assignmentRepository.findByAssigneeId(user.getId()));
     }
 
     @GetMapping

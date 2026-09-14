@@ -1,6 +1,5 @@
 package com.legalmetrology.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +12,6 @@ public class ChecklistTemplate extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instrument_type_id", nullable = false)
     private InstrumentType instrumentType;
