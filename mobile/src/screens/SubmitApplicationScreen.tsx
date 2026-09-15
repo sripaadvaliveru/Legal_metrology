@@ -7,6 +7,8 @@ import EmptyState from '../components/EmptyState';
 import Badge, { getStatusVariant } from '../components/Badge';
 import type { Instrument } from '../types';
 
+const ACTIVE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'ASSIGNED', 'SCHEDULED', 'UNDER_INSPECTION', 'PASSED', 'CERTIFICATE_GENERATED'];
+
 export default function SubmitApplicationScreen({ route, navigation }: any) {
   const preSelectedInstrumentId = route.params?.instrumentId;
   const [selectedInstrument, setSelectedInstrument] = useState(preSelectedInstrumentId || '');
@@ -17,6 +19,22 @@ export default function SubmitApplicationScreen({ route, navigation }: any) {
   const { data: instruments, isLoading } = useQuery({
     queryKey: ['my-instruments'],
     queryFn: () => instrumentApi.listMy().then(res => res.data),
+  });
+
+  const { data: allApps } = useQuery({
+    queryKey: ['my-applications'],
+    queryFn: () => applicationApi.list().then(res => res.data),
+  });
+
+  const instrumentsWithActiveApps = new Set(
+    (allApps || [])
+      .filter((app: any) => ACTIVE_STATUSES.includes(app.status))
+      .map((app: any) => app.instrumentId)
+  );
+
+  const availableInstruments = (instruments || []).filter((inst: Instrument) => {
+    if (preSelectedInstrumentId) return inst.id === preSelectedInstrumentId;
+    return !instrumentsWithActiveApps.has(inst.id) && (inst.status === 'REGISTERED' || inst.status === 'VERIFIED' || inst.status === 'EXPIRED');
   });
 
   const createMutation = useMutation({
@@ -48,8 +66,8 @@ export default function SubmitApplicationScreen({ route, navigation }: any) {
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select Instrument *</Text>
-        {instruments && instruments.length > 0 ? (
-          instruments.map((inst) => (
+        {availableInstruments.length > 0 ? (
+          availableInstruments.map((inst) => (
             <TouchableOpacity
               key={inst.id}
               activeOpacity={0.7}

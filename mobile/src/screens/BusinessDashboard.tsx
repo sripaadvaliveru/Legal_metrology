@@ -6,10 +6,11 @@ import { useAuth } from '../../App';
 import { analyticsApi, notificationApi } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge, { getStatusVariant } from '../components/Badge';
+import ErrorState, { isNetworkError } from '../components/ErrorState';
 
 export default function BusinessDashboard({ navigation }: any) {
   const { user, logout } = useAuth();
-  const { data: kpis, isLoading, refetch, isError } = useQuery({
+  const { data: kpis, isLoading, refetch, isError, error } = useQuery({
     queryKey: ['dashboard-kpis'],
     queryFn: () => analyticsApi.dashboard().then(res => res.data),
     staleTime: 60000,
@@ -38,15 +39,7 @@ export default function BusinessDashboard({ navigation }: any) {
   if (isLoading) return <LoadingSpinner />;
 
   if (isError) {
-    return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={{ fontSize: 16, color: '#6b7280', marginTop: 12 }}>Failed to load dashboard</Text>
-        <TouchableOpacity onPress={() => refetch()} style={{ marginTop: 12, backgroundColor: '#1f2937', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 }}>
-          <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState onRetry={() => refetch()} isNetworkError={isNetworkError(error)} />;
   }
 
   const stats = [

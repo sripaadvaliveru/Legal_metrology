@@ -20,4 +20,11 @@ public class RegisterRequest {
     private com.legalmetrology.enums.Role role;
 
     private String phone;
+
+    private String businessName;
+    private String address;
+    private String state;
+    private String district;
+    private String city;
+    private String pincode;
 }

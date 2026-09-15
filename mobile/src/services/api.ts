@@ -77,7 +77,9 @@ export const applicationApi = {
   list: () => api.get<Application[]>('/applications'),
   get: (id: string) => api.get<Application>(`/applications/${id}`),
   create: (data: any) => api.post<Application>('/applications', data),
+  delete: (id: string) => api.delete(`/applications/${id}`),
   getByInstrument: (instrumentId: string) => api.get<Application[]>(`/applications/by-instrument/${instrumentId}`),
+  getHistory: (id: string) => api.get<any[]>(`/applications/${id}/history`),
 };
 
 export const assignmentApi = {
@@ -100,10 +102,25 @@ export const inspectionApi = {
   getMeasurements: (id: string) => api.get<Measurement[]>(`/inspections/${id}/measurements`),
   submit: (id: string, result: string, remarks?: string) =>
     api.post<Inspection>(`/inspections/${id}/submit`, { result, remarks }),
-  recordMeasurements: (id: string, readings: any[]) =>
-    api.post(`/inspections/${id}/measurements`, { readings }),
+  recordMeasurements: (id: string, readings: any[], checklistId?: string) =>
+    api.post(`/inspections/${id}/measurements`, { readings, checklistId }),
   updateGps: (id: string, latitude: number, longitude: number) =>
     api.post<Inspection>(`/inspections/${id}/gps`, { latitude, longitude }),
+  addEvidence: (id: string, url: string) =>
+    api.post<Inspection>(`/inspections/${id}/evidence`, { url }),
+  uploadEvidence: (id: string, formData: FormData) =>
+    api.post<Inspection>(`/inspections/${id}/upload-evidence`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    }),
+};
+
+export const evidenceApi = {
+  upload: (formData: FormData) =>
+    api.post<{ url: string; filename: string }>('/evidence/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    }),
 };
 
 export const certificateApi = {

@@ -71,6 +71,14 @@ export interface Application {
   createdAt?: string;
 }
 
+export interface ApplicationStatusHistory {
+  id: string;
+  applicationId: string;
+  status: ApplicationStatus;
+  actor: string;
+  timestamp: string;
+}
+
 export type CertificateStatus = 'VALID' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED';
 
 export interface Certificate {

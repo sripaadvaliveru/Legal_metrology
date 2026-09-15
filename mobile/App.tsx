@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useState, useEffect, createContext, useContext, useMemo } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, AppState, AppStateStatus } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +35,7 @@ import RecordMeasurementsScreen from './src/screens/RecordMeasurementsScreen';
 import SubmitInspectionScreen from './src/screens/SubmitInspectionScreen';
 import { authApi, setAuthLogoutHandler } from './src/services/api';
 import type { User } from './src/types';
+import OfflineBanner from './src/components/OfflineBanner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -173,7 +174,18 @@ function AppContent() {
       setToken(null);
       setUser(null);
     });
-    return () => setAuthLogoutHandler(null);
+    const handleAppActive = (state: AppStateStatus) => {
+      if (state === 'active') {
+        import('./src/services/syncService').then(({ processSyncQueue }) => {
+          processSyncQueue().catch(() => {});
+        });
+      }
+    };
+    const subscription = AppState.addEventListener('change', handleAppActive);
+    return () => {
+      setAuthLogoutHandler(null);
+      subscription?.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -228,6 +240,7 @@ function AppContent() {
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
+      <OfflineBanner />
       <NavigationContainer>
         {!user ? (
           <AuthNavigator />

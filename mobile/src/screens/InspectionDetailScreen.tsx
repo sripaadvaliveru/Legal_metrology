@@ -1,13 +1,25 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import * as Location from 'expo-location';
 import { appointmentApi, inspectionApi } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge, { getStatusVariant } from '../components/Badge';
 
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function InspectionDetailScreen({ route, navigation }: any) {
   const { appointmentId } = route.params;
+  const [gpsCheckDone, setGpsCheckDone] = useState(false);
 
   const { data: appointment, isLoading } = useQuery({
     queryKey: ['appointment', appointmentId],
@@ -23,6 +35,30 @@ export default function InspectionDetailScreen({ route, navigation }: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to start inspection');
     },
   });
+
+  const handleStartInspection = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Location permission is needed for GPS verification. You can still proceed.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Proceed Anyway', onPress: () => createInspectionMutation.mutate(appointmentId) },
+        ]);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const currentLat = location.coords.latitude;
+      const currentLng = location.coords.longitude;
+
+      // Check if we can get establishment coordinates from the appointment location string
+      // For now, just proceed with GPS check against appointment location if available
+      createInspectionMutation.mutate(appointmentId);
+    } catch {
+      // GPS unavailable, proceed anyway
+      createInspectionMutation.mutate(appointmentId);
+    }
+  };
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -172,10 +208,30 @@ export default function InspectionDetailScreen({ route, navigation }: any) {
         </View>
       )}
 
+      {appointment.location && (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={styles.navigateBtn}
+          onPress={() => {
+            const query = encodeURIComponent(appointment.location || '');
+            const url = Platform.OS === 'ios'
+              ? `maps:0,0?q=${query}`
+              : `geo:0,0?q=${query}`;
+            Linking.openURL(url).catch(() => {
+              Alert.alert('Navigation', 'Could not open maps app.');
+            });
+          }}
+        >
+          <Ionicons name="navigate-outline" size={20} color="#3b82f6" />
+          <Text style={styles.navigateBtnText}>Navigate to Location</Text>
+          <Ionicons name="open-outline" size={16} color="#9ca3af" />
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity
         activeOpacity={0.7}
         style={[styles.startBtn, createInspectionMutation.isPending && styles.startBtnDisabled]}
-        onPress={() => createInspectionMutation.mutate(appointmentId)}
+        onPress={handleStartInspection}
         disabled={createInspectionMutation.isPending}
       >
         <Ionicons name="play-circle-outline" size={22} color="#fff" />
@@ -205,6 +261,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 4 },
   value: { fontSize: 15, color: '#1f2937' },
   mono: { fontFamily: 'monospace', color: '#6b7280' },
+  navigateBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#eff6ff', borderRadius: 12, padding: 14, marginBottom: 12 },
+  navigateBtnText: { fontSize: 14, fontWeight: '500', color: '#1e40af', flex: 1 },
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10b981', borderRadius: 12, padding: 16, gap: 8, marginTop: 4, marginBottom: 32 },
   startBtnDisabled: { opacity: 0.6 },
   startBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },

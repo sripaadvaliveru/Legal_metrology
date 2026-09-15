@@ -1,6 +1,7 @@
 package com.legalmetrology.services;
 
 import com.legalmetrology.entities.*;
+import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.AssignmentMethod;
 import com.legalmetrology.repositories.*;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class AssignmentService {
     private final ApplicationRepository applicationRepository;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final NotificationService notificationService;
 
     private static final double WEIGHT_JURISDICTION = 0.40;
     private static final double WEIGHT_COMPETENCY = 0.25;
@@ -55,7 +57,19 @@ public class AssignmentService {
 
         assignment = assignmentRepository.save(assignment);
 
+        application.setStatus(ApplicationStatus.ASSIGNED);
+        applicationRepository.save(application);
+
         auditLog(AssignmentMethod.AUTO, application, null, bestCandidate, score);
+
+        try {
+            notificationService.createNotificationByEmail(bestCandidate.getEmail(), "ASSIGNMENT_AUTO",
+                    "You have been auto-assigned to application " + application.getApplicationNumber(),
+                    "Assignment", assignment.getId());
+            notificationService.createNotificationByEmail(application.getApplicant().getEmail(), "APPLICATION_ASSIGNED",
+                    "Your application " + application.getApplicationNumber() + " has been assigned to " + bestCandidate.getName(),
+                    "Assignment", assignment.getId());
+        } catch (Exception ignored) {}
 
         return assignment;
     }
@@ -74,7 +88,21 @@ public class AssignmentService {
                 .method(AssignmentMethod.MANUAL)
                 .build();
 
-        return assignmentRepository.save(assignment);
+        assignment = assignmentRepository.save(assignment);
+
+        application.setStatus(ApplicationStatus.ASSIGNED);
+        applicationRepository.save(application);
+
+        try {
+            notificationService.createNotificationByEmail(assignee.getEmail(), "ASSIGNMENT_MANUAL",
+                    "You have been assigned to application " + application.getApplicationNumber(),
+                    "Assignment", assignment.getId());
+            notificationService.createNotificationByEmail(application.getApplicant().getEmail(), "APPLICATION_ASSIGNED",
+                    "Your application " + application.getApplicationNumber() + " has been assigned to " + assignee.getName(),
+                    "Assignment", assignment.getId());
+        } catch (Exception ignored) {}
+
+        return assignment;
     }
 
     @Transactional

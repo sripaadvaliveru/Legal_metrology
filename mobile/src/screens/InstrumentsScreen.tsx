@@ -3,9 +3,11 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Keyboard
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { instrumentApi } from '../services/api';
+import { fetchAndCacheInstruments } from '../services/offlineHelpers';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import ErrorState, { isNetworkError } from '../components/ErrorState';
 import type { Instrument } from '../types';
 
 const STATUS_FILTERS = ['All', 'VERIFIED', 'REGISTERED', 'PENDING_VERIFICATION', 'EXPIRED', 'REJECTED'] as const;
@@ -13,9 +15,9 @@ const STATUS_FILTERS = ['All', 'VERIFIED', 'REGISTERED', 'PENDING_VERIFICATION',
 export default function InstrumentsScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const { data: instruments, isLoading, refetch, isError } = useQuery({
+  const { data: instruments, isLoading, refetch, isError, error } = useQuery({
     queryKey: ['my-instruments'],
-    queryFn: () => instrumentApi.listMy().then(res => res.data),
+    queryFn: () => fetchAndCacheInstruments(() => instrumentApi.listMy().then(res => res.data)),
   });
 
   const filtered = instruments?.filter((inst: Instrument) => {
@@ -32,15 +34,7 @@ export default function InstrumentsScreen({ navigation }: any) {
   if (isLoading) return <LoadingSpinner />;
 
   if (isError) {
-    return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={styles.errorText}>Failed to load instruments</Text>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => refetch()} style={styles.retryBtn}>
-          <Text style={styles.retryBtnText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState onRetry={() => refetch()} isNetworkError={isNetworkError(error)} />;
   }
 
   return (

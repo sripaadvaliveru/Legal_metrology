@@ -9,7 +9,9 @@
     "splash": {
       "backgroundColor": "#1f2937"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.legalmetrology.mobile"
@@ -20,6 +22,9 @@
       },
       "package": "com.legalmetrology.mobile",
       "usesCleartextTraffic": true
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }

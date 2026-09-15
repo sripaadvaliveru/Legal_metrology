@@ -11,4 +11,5 @@ import java.util.List;
 public interface InspectionRepository extends JpaRepository<Inspection, String> {
     List<Inspection> findByInspectorId(String inspectorId);
     List<Inspection> findByResult(InspectionResult result);
+    java.util.Optional<Inspection> findByAppointmentId(String appointmentId);
 }

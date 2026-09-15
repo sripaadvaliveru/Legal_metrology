@@ -5,7 +5,10 @@ import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.CertificateStatus;
 import com.legalmetrology.enums.InspectionResult;
+import com.legalmetrology.enums.InstrumentStatus;
 import com.legalmetrology.repositories.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,11 +29,18 @@ public class InspectionService {
     private final InstrumentRepository instrumentRepository;
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
+    private final ChecklistTemplateRepository checklistTemplateRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Inspection createInspection(String appointmentId, String inspectorEmail) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        java.util.Optional<Inspection> existing = inspectionRepository.findByAppointmentId(appointmentId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
 
         User inspector = userRepository.findByEmail(inspectorEmail)
                 .orElseThrow(() -> new RuntimeException("Inspector not found"));
@@ -40,7 +51,13 @@ public class InspectionService {
                 .result(InspectionResult.PENDING)
                 .build();
 
-        return inspectionRepository.save(inspection);
+        inspection = inspectionRepository.save(inspection);
+
+        Application application = appointment.getApplication();
+        application.setStatus(ApplicationStatus.UNDER_INSPECTION);
+        applicationRepository.save(application);
+
+        return inspection;
     }
 
     @Transactional
@@ -52,12 +69,34 @@ public class InspectionService {
         inspection.setRemarks(remarks);
         inspection.setCompletedAt(java.time.LocalDateTime.now());
 
-        if (result == InspectionResult.FAIL) {
-            Appointment appointment = inspection.getAppointment();
-            Application application = appointment.getApplication();
+        Appointment appointment = inspection.getAppointment();
+        Application application = appointment.getApplication();
+
+        if (result == InspectionResult.PASS) {
+            application.setStatus(ApplicationStatus.PASSED);
+            applicationRepository.save(application);
+
+            generateCertificate(inspection);
+
+            application.setStatus(ApplicationStatus.CERTIFICATE_GENERATED);
+            application.setStatus(ApplicationStatus.COMPLETED);
+            applicationRepository.save(application);
+
+            Instrument instrument = application.getInstrument();
+            instrument.setStatus(InstrumentStatus.VERIFIED);
+            instrumentRepository.save(instrument);
+        } else if (result == InspectionResult.FAIL) {
             application.setStatus(ApplicationStatus.REINSPECTION_REQUIRED);
             applicationRepository.save(application);
         }
+
+        try {
+            User businessUser = application.getApplicant();
+            String resultLabel = result == InspectionResult.PASS ? "passed" : "failed";
+            notificationService.createNotificationByEmail(businessUser.getEmail(), "INSPECTION_" + result.name(),
+                    "Inspection for application " + application.getApplicationNumber() + " has " + resultLabel + ".",
+                    "Application", application.getId());
+        } catch (Exception ignored) {}
 
         return inspectionRepository.save(inspection);
     }
@@ -67,13 +106,39 @@ public class InspectionService {
         Inspection inspection = inspectionRepository.findById(inspectionId)
                 .orElseThrow(() -> new RuntimeException("Inspection not found"));
 
+        Map<String, String> checklistTolerances = java.util.Collections.emptyMap();
+        if (request.getChecklistId() != null && !request.getChecklistId().isEmpty()) {
+            ChecklistTemplate template = checklistTemplateRepository.findById(request.getChecklistId())
+                    .orElse(null);
+            if (template != null) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<Map<String, Object>> items = mapper.readValue(
+                            template.getChecklistItems(),
+                            new TypeReference<List<Map<String, Object>>>() {});
+                    for (Map<String, Object> item : items) {
+                        String param = (String) item.get("parameter");
+                        String tol = (String) item.get("tolerance");
+                        if (param != null && tol != null) {
+                            checklistTolerances.put(param.toLowerCase(), tol);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
         List<Measurement> measurements = new ArrayList<>();
         for (MeasurementBatchRequest.MeasurementItem item : request.getReadings()) {
+            String tolerance = item.getTolerance();
+            if ((tolerance == null || tolerance.isEmpty()) && !checklistTolerances.isEmpty()) {
+                tolerance = checklistTolerances.getOrDefault(item.getParameter().toLowerCase(), null);
+            }
+
             Measurement measurement = Measurement.builder()
                     .inspection(inspection)
                     .parameter(item.getParameter())
                     .observedValue(item.getObservedValue())
-                    .tolerance(item.getTolerance())
+                    .tolerance(tolerance)
                     .withinTolerance(item.getWithinTolerance())
                     .build();
             measurements.add(measurement);

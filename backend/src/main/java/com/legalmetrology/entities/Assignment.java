@@ -1,6 +1,5 @@
 package com.legalmetrology.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.legalmetrology.enums.AssignmentMethod;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +16,6 @@ public class Assignment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;

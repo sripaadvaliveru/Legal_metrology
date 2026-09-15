@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { applicationApi } from '../services/api';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
+
+const DELETABLE_STATUSES = ['SUBMITTED', 'APPROVED', 'REJECTED', 'DRAFT'];
 
 const STATUS_STEPS = [
   { key: 'SUBMITTED', label: 'Submitted', icon: 'document-text-outline' },
@@ -27,11 +29,42 @@ function getStepIndex(status: string): number {
 
 export default function ApplicationDetailScreen({ route, navigation }: any) {
   const { applicationId } = route.params;
+  const queryClient = useQueryClient();
 
   const { data: application, isLoading, isError } = useQuery({
     queryKey: ['application', applicationId],
     queryFn: () => applicationApi.get(applicationId).then(res => res.data),
+    refetchInterval: 5000,
   });
+
+  const { data: history } = useQuery({
+    queryKey: ['application-history', applicationId],
+    queryFn: () => applicationApi.getHistory(applicationId).then(res => res.data),
+    refetchInterval: 5000,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => applicationApi.delete(applicationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['my-instruments'] });
+      navigation.goBack();
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to delete application');
+    },
+  });
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Application',
+      'Are you sure you want to delete this application? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+      ]
+    );
+  };
 
   if (isLoading) return <LoadingSpinner />;
   if (isError || !application) {
@@ -116,6 +149,38 @@ export default function ApplicationDetailScreen({ route, navigation }: any) {
           })}
         </View>
       )}
+
+      {history && history.length > 0 && (
+        <View style={styles.historySection}>
+          <Text style={styles.sectionTitle}>Activity Log</Text>
+          {history.map((h: any, idx: number) => (
+            <View key={h.id || idx} style={styles.historyRow}>
+              <View style={[styles.historyDot, { backgroundColor: idx === history.length - 1 ? '#3b82f6' : '#10b981' }]} />
+              <View style={styles.historyContent}>
+                <Text style={styles.historyStatus}>{h.status?.replace(/_/g, ' ')}</Text>
+                <Text style={styles.historyActor}>by {h.actor}</Text>
+                <Text style={styles.historyTime}>
+                  {h.timestamp ? new Date(h.timestamp).toLocaleString() : ''}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {DELETABLE_STATUSES.includes(application.status) && (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.deleteBtn, deleteMutation.isPending && styles.deleteBtnDisabled]}
+          onPress={handleDelete}
+          disabled={deleteMutation.isPending}
+        >
+          <Ionicons name="trash-outline" size={20} color="#ef4444" />
+          <Text style={styles.deleteBtnText}>
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete Application'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -144,4 +209,14 @@ const styles = StyleSheet.create({
   timelineLineActive: { backgroundColor: '#10b981' },
   timelineLabel: { fontSize: 14, color: '#9ca3af', marginLeft: 12, marginTop: 4 },
   timelineLabelActive: { color: '#1f2937', fontWeight: '500' },
+  historySection: { margin: 16, marginBottom: 32, backgroundColor: '#fff', borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  historyRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+  historyDot: { width: 10, height: 10, borderRadius: 5, marginTop: 5, marginRight: 12 },
+  historyContent: { flex: 1 },
+  historyStatus: { fontSize: 14, fontWeight: '600', color: '#1f2937', textTransform: 'capitalize' },
+  historyActor: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  historyTime: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 12, marginHorizontal: 16, marginBottom: 32, padding: 16, gap: 8, borderWidth: 1, borderColor: '#fecaca' },
+  deleteBtnDisabled: { opacity: 0.6 },
+  deleteBtnText: { fontSize: 16, fontWeight: '600', color: '#ef4444' },
 });

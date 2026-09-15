@@ -18,6 +18,7 @@ export default function NotificationsScreen({ navigation }: any) {
     mutationFn: (id: string) => notificationApi.markAsRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 
@@ -28,6 +29,7 @@ export default function NotificationsScreen({ navigation }: any) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 

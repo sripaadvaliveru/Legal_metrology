@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Year;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,11 +27,26 @@ public class InstrumentService {
     private final InstrumentTypeRepository instrumentTypeRepository;
     private final EstablishmentRepository establishmentRepository;
 
-    private static final AtomicLong COUNTER = new AtomicLong(100);
+    private final AtomicLong COUNTER = new AtomicLong(0);
+
+    @PostConstruct
+    public void init() {
+        long maxSeq = instrumentRepository.findAll().stream()
+                .map(Instrument::getInstrumentId)
+                .filter(id -> id != null && id.startsWith("LM-INST-"))
+                .map(id -> {
+                    try { return Long.parseLong(id.substring(id.lastIndexOf('-') + 1)); }
+                    catch (Exception e) { return 0L; }
+                })
+                .mapToLong(Long::longValue)
+                .max().orElse(0L);
+        COUNTER.set(maxSeq + 1);
+    }
 
     public Instrument createInstrument(InstrumentCreateRequest request, String userId) {
-        InstrumentType type = instrumentTypeRepository.findByName(request.getType())
-                .orElseThrow(() -> new RuntimeException("Instrument type not found"));
+        InstrumentType type = instrumentTypeRepository.findById(request.getType())
+                .orElseGet(() -> instrumentTypeRepository.findByName(request.getType())
+                        .orElseThrow(() -> new RuntimeException("Instrument type not found")));
 
         Establishment establishment = establishmentRepository.findById(request.getEstablishmentId())
                 .orElseThrow(() -> new RuntimeException("Establishment not found"));

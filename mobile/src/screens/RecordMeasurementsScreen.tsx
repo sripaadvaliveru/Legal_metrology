@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { inspectionApi } from '../services/api';
+import { inspectionApi, appointmentApi, checklistApi } from '../services/api';
+import { fetchAndCacheChecklists } from '../services/offlineHelpers';
+import EvidenceCapture from '../components/EvidenceCapture';
 
 interface MeasurementItem {
   parameter: string;
@@ -12,13 +14,55 @@ interface MeasurementItem {
   remarks: string;
 }
 
+interface ChecklistItem {
+  parameter: string;
+  tolerance: string;
+  mandatory: boolean;
+}
+
 export default function RecordMeasurementsScreen({ route, navigation }: any) {
   const { inspectionId } = route.params;
-  const [measurements, setMeasurements] = useState<MeasurementItem[]>([
-    { parameter: '', observedValue: '', tolerance: '', remarks: '' },
-  ]);
+
+  const { data: inspection } = useQuery({
+    queryKey: ['inspection', inspectionId],
+    queryFn: () => inspectionApi.get(inspectionId).then(res => res.data),
+  });
+
+  const { data: appointment } = useQuery({
+    queryKey: ['appointment', inspection?.appointmentId],
+    queryFn: () => appointmentApi.get(inspection!.appointmentId).then(res => res.data),
+    enabled: !!inspection?.appointmentId,
+  });
+
+  const instrumentTypeId = appointment?.application?.instrument?.instrumentType?.id;
+
+  const { data: checklists } = useQuery({
+    queryKey: ['checklist', instrumentTypeId],
+    queryFn: () => fetchAndCacheChecklists(instrumentTypeId!, () => checklistApi.getByInstrumentType(instrumentTypeId!).then(res => res.data)),
+    enabled: !!instrumentTypeId,
+  });
+
+  const template = checklists?.[0];
+
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+
+  useEffect(() => {
+    if (template) {
+      try {
+        const items: ChecklistItem[] = JSON.parse(template.checklistItems);
+        setChecklistItems(items);
+        setMeasurements(items.map(item => ({
+          parameter: item.parameter,
+          observedValue: '',
+          tolerance: item.tolerance,
+          remarks: '',
+        })));
+      } catch {}
+    }
+  }, [template?.id]);
 
   const recordMutation = useMutation({
     mutationFn: async () => {
@@ -31,7 +75,7 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
           withinTolerance: undefined,
           remarks: m.remarks || undefined,
         }));
-      await inspectionApi.recordMeasurements(inspectionId, readings);
+      await inspectionApi.recordMeasurements(inspectionId, readings, template?.id);
     },
     onSuccess: () => {
       navigation.navigate('InspectionReview', { inspectionId });
@@ -83,6 +127,15 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      {template && (
+        <View style={styles.checklistBanner}>
+          <Ionicons name="list-outline" size={18} color="#1e40af" />
+          <Text style={styles.checklistBannerText}>
+            Using checklist: {template.templateName} ({checklistItems.length} items)
+          </Text>
+        </View>
+      )}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>GPS Location</Text>
         <TouchableOpacity activeOpacity={0.7} style={styles.gpsBtn} onPress={captureGps} disabled={gpsLoading}>
@@ -93,6 +146,8 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
         </TouchableOpacity>
       </View>
 
+      <EvidenceCapture inspectionId={inspectionId} />
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Measurements</Text>
@@ -101,47 +156,55 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {measurements.map((m, index) => (
-          <View key={`m-${index}-${m.parameter}`} style={styles.measurementCard}>
-            <View style={styles.measurementHeader}>
-              <Text style={styles.measurementNum}>#{index + 1}</Text>
-              {measurements.length > 1 && (
-                <TouchableOpacity activeOpacity={0.7} onPress={() => removeMeasurement(index)}>
-                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                </TouchableOpacity>
-              )}
+        {measurements.map((m, index) => {
+          const checklistItem = checklistItems.find(c => c.parameter === m.parameter);
+          return (
+            <View key={`m-${index}-${m.parameter}`} style={styles.measurementCard}>
+              <View style={styles.measurementHeader}>
+                <Text style={styles.measurementNum}>#{index + 1}</Text>
+                {checklistItem?.mandatory && (
+                  <View style={styles.requiredBadge}>
+                    <Text style={styles.requiredText}>REQUIRED</Text>
+                  </View>
+                )}
+                {measurements.length > 1 && (
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => removeMeasurement(index)}>
+                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Parameter"
+                value={m.parameter}
+                onChangeText={(v) => updateMeasurement(index, 'parameter', v)}
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Observed Value"
+                value={m.observedValue}
+                onChangeText={(v) => updateMeasurement(index, 'observedValue', v)}
+                keyboardType="numeric"
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Tolerance"
+                value={m.tolerance}
+                onChangeText={(v) => updateMeasurement(index, 'tolerance', v)}
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Remarks (optional)"
+                value={m.remarks}
+                onChangeText={(v) => updateMeasurement(index, 'remarks', v)}
+                returnKeyType="done"
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Parameter (e.g. Weight)"
-              value={m.parameter}
-              onChangeText={(v) => updateMeasurement(index, 'parameter', v)}
-              returnKeyType="next"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Observed Value"
-              value={m.observedValue}
-              onChangeText={(v) => updateMeasurement(index, 'observedValue', v)}
-              keyboardType="numeric"
-              returnKeyType="next"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Tolerance (optional)"
-              value={m.tolerance}
-              onChangeText={(v) => updateMeasurement(index, 'tolerance', v)}
-              returnKeyType="next"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Remarks (optional)"
-              value={m.remarks}
-              onChangeText={(v) => updateMeasurement(index, 'remarks', v)}
-              returnKeyType="done"
-            />
-          </View>
-        ))}
+          );
+        })}
       </View>
 
       <TouchableOpacity
@@ -160,6 +223,8 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
+  checklistBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#eff6ff', borderRadius: 8, padding: 10, marginBottom: 12 },
+  checklistBannerText: { fontSize: 13, color: '#1e40af', flex: 1 },
   section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 12 },
@@ -168,6 +233,8 @@ const styles = StyleSheet.create({
   measurementCard: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12 },
   measurementHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   measurementNum: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
+  requiredBadge: { backgroundColor: '#dbeafe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  requiredText: { fontSize: 10, fontWeight: '700', color: '#1e40af' },
   input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 10, fontSize: 14, marginBottom: 8, backgroundColor: '#f9fafb' },
   submitBtn: { backgroundColor: '#1f2937', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   submitBtnDisabled: { opacity: 0.6 },

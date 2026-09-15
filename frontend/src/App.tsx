@@ -8,7 +8,12 @@ import BusinessDashboard from '@/modules/user/BusinessDashboard';
 import LmoDashboard from '@/modules/lmo/LmoDashboard';
 import GatcDashboard from '@/modules/gatc/GatcDashboard';
 import AdminDashboard from '@/modules/admin/AdminDashboard';
+import ApplicationsReview from '@/modules/admin/ApplicationsReview';
+import AssignmentPanel from '@/modules/admin/AssignmentPanel';
+import ScheduleAppointment from '@/modules/admin/ScheduleAppointment';
 import RulesChecklists from '@/modules/admin/RulesChecklists';
+import AssignedTests from '@/modules/gatc/AssignedTests';
+import TestDetail from '@/modules/gatc/TestDetail';
 import PublicVerify from '@/modules/public-verification/PublicVerify';
 
 const queryClient = new QueryClient();
@@ -67,16 +72,23 @@ function AppRoutes() {
 
         {/* Business routes */}
         <Route path="instruments" element={<BusinessDashboard />} />
-        <Route path="applications" element={<BusinessDashboard />} />
+        <Route path="applications" element={
+          user?.role === 'SUPER_ADMIN' ? <ApplicationsReview /> : <BusinessDashboard />
+        } />
         <Route path="certificates" element={<BusinessDashboard />} />
         <Route path="notifications" element={<BusinessDashboard />} />
 
         {/* LMO routes */}
-        <Route path="assignments" element={<LmoDashboard />} />
-        <Route path="schedule" element={<LmoDashboard />} />
+        <Route path="assignments" element={
+          user?.role === 'SUPER_ADMIN' ? <AssignmentPanel /> : <LmoDashboard />
+        } />
+        <Route path="schedule" element={
+          user?.role === 'SUPER_ADMIN' ? <ScheduleAppointment /> : <LmoDashboard />
+        } />
 
         {/* GATC routes */}
-        <Route path="tests" element={<GatcDashboard />} />
+        <Route path="tests" element={<AssignedTests />} />
+        <Route path="tests/:id" element={<TestDetail />} />
         <Route path="appointments" element={<GatcDashboard />} />
         <Route path="equipment" element={<GatcDashboard />} />
 

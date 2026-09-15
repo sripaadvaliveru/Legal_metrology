@@ -75,7 +75,7 @@ export default function ApplicationsScreen({ navigation }: any) {
               <Badge text={item.status} variant={getStatusVariant(item.status)} />
             </View>
             <Text style={styles.type}>{item.type.replace(/_/g, ' ')}</Text>
-            <Text style={styles.detail}>Instrument: {item.instrumentId.slice(0, 8)}...</Text>
+            <Text style={styles.detail}>Instrument: {item.instrument?.instrumentId || item.instrumentId?.slice(0, 8) || 'N/A'}</Text>
             {item.submittedAt && (
               <Text style={styles.detail}>Submitted: {new Date(item.submittedAt).toLocaleDateString()}</Text>
             )}

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Year;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,8 +25,23 @@ public class ApplicationService {
     private final ApplicationStatusHistoryRepository statusHistoryRepository;
     private final AppointmentRepository appointmentRepository;
     private final AssignmentRepository assignmentRepository;
+    private final NotificationService notificationService;
 
-    private static final AtomicLong APP_COUNTER = new AtomicLong(1);
+    private final AtomicLong APP_COUNTER = new AtomicLong(0);
+
+    @PostConstruct
+    public void init() {
+        long maxSeq = applicationRepository.findAll().stream()
+                .map(Application::getApplicationNumber)
+                .filter(id -> id != null && id.startsWith("APP-"))
+                .map(id -> {
+                    try { return Long.parseLong(id.substring(id.lastIndexOf('-') + 1)); }
+                    catch (Exception e) { return 0L; }
+                })
+                .mapToLong(Long::longValue)
+                .max().orElse(0L);
+        APP_COUNTER.set(maxSeq + 1);
+    }
 
     @Transactional
     public Application createApplication(ApplicationCreateRequest request, String userEmail) {
@@ -54,6 +70,22 @@ public class ApplicationService {
                 .actor(userEmail)
                 .build();
         statusHistoryRepository.save(history);
+
+        final Application savedApplication = application;
+        try {
+            notificationService.createNotificationByEmail(userEmail, "APPLICATION_SUBMITTED",
+                    "Your application " + applicationNumber + " has been submitted for verification.",
+                    "Application", savedApplication.getId());
+            userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == com.legalmetrology.enums.Role.SUPER_ADMIN)
+                    .forEach(admin -> {
+                        try {
+                            notificationService.createNotificationByEmail(admin.getEmail(), "NEW_APPLICATION",
+                                    "New application " + applicationNumber + " submitted by " + applicant.getName(),
+                                    "Application", savedApplication.getId());
+                        } catch (Exception ignored) {}
+                    });
+        } catch (Exception ignored) {}
 
         return application;
     }
@@ -84,6 +116,14 @@ public class ApplicationService {
                 .actor(actor)
                 .build();
         statusHistoryRepository.save(history);
+
+        try {
+            User businessUser = application.getApplicant();
+            String statusLabel = newStatus.name().replaceAll("_", " ").toLowerCase();
+            String message = "Your application " + application.getApplicationNumber() + " has been " + statusLabel + ".";
+            notificationService.createNotificationByEmail(businessUser.getEmail(), "APPLICATION_STATUS_CHANGED",
+                    message, "Application", application.getId());
+        } catch (Exception ignored) {}
 
         return application;
     }
@@ -119,6 +159,16 @@ public class ApplicationService {
                 .build();
         statusHistoryRepository.save(history);
 
+        try {
+            User businessUser = application.getApplicant();
+            notificationService.createNotificationByEmail(businessUser.getEmail(), "APPLICATION_SCHEDULED",
+                    "Your application " + application.getApplicationNumber() + " has been scheduled for " + request.getScheduledAt() + ".",
+                    "Application", application.getId());
+            notificationService.createNotificationByEmail(assignment.getAssignee().getEmail(), "INSPECTION_SCHEDULED",
+                    "Inspection for application " + application.getApplicationNumber() + " scheduled at " + request.getLocation(),
+                    "Appointment", appointment.getId());
+        } catch (Exception ignored) {}
+
         return appointment;
     }
 
@@ -130,5 +180,32 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public List<Application> getApplicationsByInstrumentId(String instrumentId) {
         return applicationRepository.findByInstrumentId(instrumentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApplicationStatusHistory> getApplicationHistory(String applicationId) {
+        return statusHistoryRepository.findByApplicationIdOrderByTimestampAsc(applicationId);
+    }
+
+    @Transactional
+    public void deleteApplication(String applicationId, String userEmail) {
+        Application application = getApplicationById(applicationId);
+
+        if (!application.getApplicant().getEmail().equals(userEmail)) {
+            throw new RuntimeException("You can only delete your own applications");
+        }
+
+        ApplicationStatus status = application.getStatus();
+        if (status != ApplicationStatus.SUBMITTED && status != ApplicationStatus.APPROVED
+                && status != ApplicationStatus.REJECTED && status != ApplicationStatus.DRAFT) {
+            throw new RuntimeException("Application cannot be deleted after it has been assigned. Current status: " + status);
+        }
+
+        Appointment appointment = application.getAppointment();
+        if (appointment != null) {
+            appointmentRepository.delete(appointment);
+        }
+
+        applicationRepository.delete(application);
     }
 }

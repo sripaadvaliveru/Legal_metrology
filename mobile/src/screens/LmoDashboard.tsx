@@ -6,10 +6,11 @@ import { useAuth } from '../../App';
 import { analyticsApi, notificationApi, appointmentApi } from '../services/api';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorState, { isNetworkError } from '../components/ErrorState';
 
 export default function LmoDashboard({ navigation }: any) {
   const { user, logout } = useAuth();
-  const { data: kpis, isLoading, refetch, isError } = useQuery({
+  const { data: kpis, isLoading, refetch, isError, error } = useQuery({
     queryKey: ['lmo-dashboard-kpis'],
     queryFn: () => analyticsApi.dashboard().then(res => res.data),
     staleTime: 60000,
@@ -46,15 +47,7 @@ export default function LmoDashboard({ navigation }: any) {
   if (isLoading) return <LoadingSpinner />;
 
   if (isError) {
-    return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={styles.errorText}>Failed to load dashboard</Text>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => refetch()} style={styles.retryBtn}>
-          <Text style={styles.retryBtnText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState onRetry={() => refetch()} isNetworkError={isNetworkError(error)} />;
   }
 
   const now = new Date();
@@ -95,6 +88,7 @@ export default function LmoDashboard({ navigation }: any) {
     const instrument = app?.instrument;
     const typeName = instrument?.instrumentType?.name || 'Instrument';
     const serialNum = instrument?.serialNumber || '';
+    const appNumber = app?.applicationNumber || '';
     return (
       <TouchableOpacity
         key={item.id}
@@ -103,11 +97,11 @@ export default function LmoDashboard({ navigation }: any) {
         onPress={() => navigation.navigate('InspectionDetail', { appointmentId: item.id })}
       >
         <View style={styles.appointmentHeader}>
-          <Text style={styles.appointmentType}>{typeName}</Text>
+          <Text style={styles.appointmentAppNumber}>{appNumber || 'No Application'}</Text>
           <Badge text={item.status} variant={getStatusVariant(item.status)} />
         </View>
+        <Text style={styles.appointmentType}>{typeName}</Text>
         {serialNum ? <Text style={styles.appointmentDetail}>S/N: {serialNum}</Text> : null}
-        {app?.applicationNumber ? <Text style={styles.appointmentDetail}>App: {app.applicationNumber}</Text> : null}
         <Text style={styles.appointmentTime}>{new Date(item.scheduledAt).toLocaleString()}</Text>
         {item.location ? <Text style={styles.appointmentLocation}>{item.location}</Text> : null}
       </TouchableOpacity>
@@ -184,7 +178,13 @@ export default function LmoDashboard({ navigation }: any) {
             <Ionicons name="time-outline" size={20} color="#8b5cf6" />
             <Text style={[styles.sectionTitle, { color: '#8b5cf6' }]}>Upcoming</Text>
           </View>
-          {upcomingAppointments.slice(0, 5).map(renderAppointmentCard)}
+          {upcomingAppointments.slice(0, 3).map(renderAppointmentCard)}
+          {upcomingAppointments.length > 3 && (
+            <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn} onPress={() => navigation.navigate('Assignments')}>
+              <Text style={styles.seeAllText}>See All ({upcomingAppointments.length})</Text>
+              <Ionicons name="chevron-forward" size={16} color="#8b5cf6" />
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -223,12 +223,15 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
   appointmentCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  appointmentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  appointmentType: { fontSize: 15, fontWeight: '600', color: '#1f2937' },
+  appointmentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  appointmentAppNumber: { fontSize: 15, fontWeight: '700', color: '#1f2937', flex: 1 },
+  appointmentType: { fontSize: 14, fontWeight: '500', color: '#6b7280', marginBottom: 4 },
   appointmentDetail: { fontSize: 13, color: '#6b7280', marginBottom: 2 },
   appointmentTime: { fontSize: 13, color: '#9ca3af', marginTop: 4 },
   appointmentLocation: { fontSize: 13, color: '#6b7280', marginTop: 2 },
   emptySection: { padding: 32, alignItems: 'center' },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#6b7280', marginTop: 12 },
   emptyText: { fontSize: 14, color: '#9ca3af', marginTop: 4, textAlign: 'center' },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 4, gap: 4 },
+  seeAllText: { fontSize: 14, fontWeight: '600', color: '#8b5cf6' },
 });

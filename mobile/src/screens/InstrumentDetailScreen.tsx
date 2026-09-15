@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { instrumentApi } from '../services/api';
+import { instrumentApi, applicationApi } from '../services/api';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
+
+const ACTIVE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'ASSIGNED', 'SCHEDULED', 'UNDER_INSPECTION', 'PASSED', 'CERTIFICATE_GENERATED'];
 
 export default function InstrumentDetailScreen({ route, navigation }: any) {
   const { instrumentId } = route.params;
@@ -12,6 +14,12 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
   const { data: instrument, isLoading, isError } = useQuery({
     queryKey: ['instrument', instrumentId],
     queryFn: () => instrumentApi.get(instrumentId).then(res => res.data),
+  });
+
+  const { data: appHistory } = useQuery({
+    queryKey: ['instrument-app-history', instrumentId],
+    queryFn: () => applicationApi.getByInstrument(instrumentId).then(res => res.data),
+    enabled: !!instrumentId,
   });
 
   if (isLoading) return <LoadingSpinner />;
@@ -26,6 +34,11 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
       </View>
     );
   }
+
+  const hasActiveApplication = appHistory?.some((app: any) => ACTIVE_STATUSES.includes(app.status));
+  const lastApp = appHistory?.[0];
+  const isRejected = lastApp?.status === 'REJECTED';
+  const canApply = (instrument.status === 'VERIFIED' || instrument.status === 'EXPIRED' || instrument.status === 'REGISTERED') && (!hasActiveApplication || isRejected);
 
   const handleApplyVerification = () => {
     navigation.navigate('SubmitApplication', { instrumentId: instrument.id });
@@ -90,13 +103,20 @@ export default function InstrumentDetailScreen({ route, navigation }: any) {
         <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
       </TouchableOpacity>
 
-      {(instrument.status === 'VERIFIED' || instrument.status === 'EXPIRED' || instrument.status === 'REGISTERED') && (
+      {canApply && (
         <TouchableOpacity activeOpacity={0.7} style={styles.applyBtn} onPress={handleApplyVerification}>
           <Ionicons name="document-text-outline" size={20} color="#fff" />
           <Text style={styles.applyBtnText}>
             {instrument.status === 'EXPIRED' ? 'Apply for Re-verification' : 'Apply for Verification'}
           </Text>
         </TouchableOpacity>
+      )}
+
+      {hasActiveApplication && !isRejected && (
+        <View style={styles.activeAppBanner}>
+          <Ionicons name="information-circle-outline" size={18} color="#3b82f6" />
+          <Text style={styles.activeAppText}>This instrument already has an active application ({lastApp?.applicationNumber}). Wait for it to complete or get rejected before applying again.</Text>
+        </View>
       )}
     </ScrollView>
   );
@@ -118,6 +138,8 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: '#e5e7eb', marginVertical: 4 },
   historyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, padding: 16, gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   historyBtnText: { flex: 1, fontSize: 15, fontWeight: '500', color: '#1f2937' },
-  applyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1f2937', borderRadius: 12, marginHorizontal: 16, marginBottom: 32, padding: 16, gap: 8 },
+  applyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1f2937', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, padding: 16, gap: 8 },
   applyBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  activeAppBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#eff6ff', borderRadius: 12, marginHorizontal: 16, marginBottom: 32, padding: 14 },
+  activeAppText: { flex: 1, fontSize: 13, color: '#1e40af', lineHeight: 18 },
 });

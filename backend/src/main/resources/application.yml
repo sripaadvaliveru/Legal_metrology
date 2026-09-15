@@ -41,6 +41,10 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+# Evidence upload
+evidence:
+  upload-dir: ${EVIDENCE_UPLOAD_DIR:uploads}
+
 # JWT Configuration
 jwt:
   secret: sih2026-legal-metrology-jwt-secret-key-that-is-long-enough-for-hs256

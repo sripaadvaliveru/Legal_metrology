@@ -4,6 +4,7 @@ import com.legalmetrology.dto.ApplicationCreateRequest;
 import com.legalmetrology.dto.ScheduleRequest;
 import com.legalmetrology.entities.Appointment;
 import com.legalmetrology.entities.Application;
+import com.legalmetrology.entities.ApplicationStatusHistory;
 import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.services.ApplicationService;
 import jakarta.validation.Valid;
@@ -77,5 +78,20 @@ public class ApplicationController {
             @Valid @RequestBody ScheduleRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(applicationService.scheduleApplication(id, request, authentication.getName()));
+    }
+
+    @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<List<ApplicationStatusHistory>> getApplicationHistory(@PathVariable String id) {
+        return ResponseEntity.ok(applicationService.getApplicationHistory(id));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('BUSINESS')")
+    public ResponseEntity<Void> deleteApplication(
+            @PathVariable String id,
+            Authentication authentication) {
+        applicationService.deleteApplication(id, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,8 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  LayoutDashboard, Package, FileText, ClipboardCheck, Building2,
-  BarChart3, Settings, Bell, LogOut, Menu, X, QrCode
+  LayoutDashboard, Package, FileText, ClipboardCheck,
+  Settings, Bell, LogOut, Menu, X, QrCode, Clock, Users, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -30,22 +30,19 @@ const roleMenus: Record<string, { label: string; icon: any; path: string }[]> = 
   ],
   DISTRICT_OFFICER: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'District Overview', icon: BarChart3, path: '/dashboard/overview' },
-    { label: 'Instruments', icon: Package, path: '/dashboard/instruments' },
-    { label: 'Enforcement', icon: Settings, path: '/dashboard/enforcement' },
+    { label: 'Coming Soon', icon: Clock, path: '/dashboard' },
   ],
   STATE_OFFICER: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'State Analytics', icon: BarChart3, path: '/dashboard/analytics' },
-    { label: 'Districts', icon: Building2, path: '/dashboard/districts' },
+    { label: 'Coming Soon', icon: Clock, path: '/dashboard' },
   ],
   SUPER_ADMIN: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Users', icon: Settings, path: '/dashboard/users' },
-    { label: 'Roles & Permissions', icon: Settings, path: '/dashboard/roles' },
-    { label: 'Jurisdictions', icon: Building2, path: '/dashboard/jurisdictions' },
-    { label: 'Rules & Checklists', icon: FileText, path: '/dashboard/rules' },
-    { label: 'Audit Logs', icon: BarChart3, path: '/dashboard/audit' },
+    { label: 'Review Applications', icon: FileText, path: '/dashboard/applications' },
+    { label: 'Assign Officers', icon: UserCheck, path: '/dashboard/assignments' },
+    { label: 'Schedule Inspections', icon: ClipboardCheck, path: '/dashboard/schedule' },
+    { label: 'Rules & Checklists', icon: Settings, path: '/dashboard/rules' },
+    { label: 'Users', icon: Users, path: '/dashboard/users' },
   ],
 };
 

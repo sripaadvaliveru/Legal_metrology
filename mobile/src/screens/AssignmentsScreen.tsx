@@ -2,15 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { appointmentApi } from '../services/api';
+import { appointmentApi, assignmentApi } from '../services/api';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import ErrorState, { isNetworkError } from '../components/ErrorState';
 import type { Appointment } from '../types';
 
-const STATUS_FILTERS = ['All', 'SCHEDULED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED'];
+const STATUS_FILTERS = ['All', 'PENDING', 'SCHEDULED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABELS: Record<string, string> = {
   All: 'All',
+  PENDING: 'Pending',
   SCHEDULED: 'Scheduled',
   RESCHEDULED: 'Rescheduled',
   COMPLETED: 'Completed',
@@ -19,86 +21,132 @@ const FILTER_LABELS: Record<string, string> = {
 
 export default function AssignmentsScreen({ navigation }: any) {
   const [activeFilter, setActiveFilter] = useState('All');
-  const { data: appointments, isLoading, refetch, isError } = useQuery({
+  const { data: appointments, isLoading: loadingAppts, refetch, isError, error } = useQuery({
     queryKey: ['my-appointments'],
     queryFn: () => appointmentApi.listMy().then(res => res.data),
     staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+  const { data: assignments, isLoading: loadingAssignments } = useQuery({
+    queryKey: ['my-assignments'],
+    queryFn: () => assignmentApi.listMy().then(res => res.data),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const scheduledAppointmentIds = useMemo(() =>
+    new Set((appointments || []).map((a: any) => a.assignment?.id).filter(Boolean)),
+    [appointments]
+  );
+
+  const unscheduledAssignments = useMemo(() =>
+    (assignments || []).filter((a: any) => !scheduledAppointmentIds.has(a.id)),
+    [assignments, scheduledAppointmentIds]
+  );
+
+  const appointmentItems = useMemo(() =>
+    (appointments || []).map((a: any) => ({
+      id: a.id,
+      type: 'appointment' as const,
+      status: a.status,
+      data: a,
+    })),
+    [appointments]
+  );
+
+  const assignmentItems = useMemo(() =>
+    unscheduledAssignments.map((a: any) => ({
+      id: a.id,
+      type: 'assignment' as const,
+      status: 'PENDING',
+      data: a,
+    })),
+    [unscheduledAssignments]
+  );
+
+  const allItems = useMemo(() => [...appointmentItems, ...assignmentItems], [appointmentItems, assignmentItems]);
 
   const filtered = useMemo(() => {
-    if (!appointments) return [];
-    if (activeFilter === 'All') return appointments;
-    return appointments.filter(a => a.status === activeFilter);
-  }, [appointments, activeFilter]);
+    if (activeFilter === 'All') return allItems;
+    return allItems.filter(item => item.status === activeFilter);
+  }, [allItems, activeFilter]);
 
-  if (isLoading) return <LoadingSpinner />;
+  if (loadingAppts || loadingAssignments) return <LoadingSpinner />;
 
   if (isError) {
-    return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={styles.errorText}>Failed to load assignments</Text>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => refetch()} style={styles.retryBtn}>
-          <Text style={styles.retryBtnText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState onRetry={() => refetch()} isNetworkError={isNetworkError(error)} />;
   }
 
-  const renderItem = ({ item }: { item: Appointment }) => {
-    const app = item.application;
+  const renderItem = ({ item }: { item: { id: string; type: 'appointment' | 'assignment'; status: string; data: any } }) => {
+    if (item.type === 'appointment') {
+      const appt = item.data as Appointment;
+      const app = appt.application;
+      const instrument = app?.instrument;
+      const typeName = instrument?.instrumentType?.name || 'Instrument';
+      const serialNum = instrument?.serialNumber || '';
+      const manufacturer = instrument?.manufacturer || '';
+      const model = instrument?.model || '';
+      const isOverdue = new Date(appt.scheduledAt) < new Date() && appt.status !== 'COMPLETED' && appt.status !== 'CANCELLED';
+
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.card, isOverdue && styles.cardOverdue]}
+          onPress={() => navigation.navigate('InspectionDetail', { appointmentId: appt.id })}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardAppNumber}>{app?.applicationNumber || 'No Application'}</Text>
+            <Badge text={appt.status} variant={getStatusVariant(appt.status)} />
+          </View>
+          <Text style={styles.cardType}>{typeName}</Text>
+          {serialNum ? (
+            <View style={styles.detailRow}>
+              <Ionicons name="hardware-chip-outline" size={14} color="#6b7280" />
+              <Text style={styles.detailText}>{manufacturer} {model}</Text>
+            </View>
+          ) : null}
+          {serialNum ? (
+            <View style={styles.detailRow}>
+              <Ionicons name="finger-print-outline" size={14} color="#6b7280" />
+              <Text style={styles.detailText}>S/N: {serialNum}</Text>
+            </View>
+          ) : null}
+          <View style={styles.detailRow}>
+            <Ionicons name="time-outline" size={14} color="#6b7280" />
+            <Text style={styles.detailText}>{new Date(appt.scheduledAt).toLocaleString()}</Text>
+          </View>
+          {appt.location ? (
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={14} color="#6b7280" />
+              <Text style={styles.detailText}>{appt.location}</Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
+      );
+    }
+
+    const asgn = item.data;
+    const app = asgn.application;
     const instrument = app?.instrument;
     const typeName = instrument?.instrumentType?.name || 'Instrument';
-    const serialNum = instrument?.serialNumber || '';
-    const manufacturer = instrument?.manufacturer || '';
-    const model = instrument?.model || '';
-    const isOverdue = new Date(item.scheduledAt) < new Date() && item.status !== 'COMPLETED' && item.status !== 'CANCELLED';
 
     return (
       <TouchableOpacity
         activeOpacity={0.7}
-        style={[styles.card, isOverdue && styles.cardOverdue]}
-        onPress={() => navigation.navigate('InspectionDetail', { appointmentId: item.id })}
+        style={[styles.card, styles.cardPending]}
+        onPress={() => {}} // No appointment yet
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardType}>{typeName}</Text>
-          <Badge text={item.status} variant={getStatusVariant(item.status)} />
+          <Text style={styles.cardAppNumber}>{app?.applicationNumber || 'No Application'}</Text>
+          <Badge text="Pending Scheduling" variant="warning" />
         </View>
-
-        {serialNum ? (
-          <View style={styles.detailRow}>
-            <Ionicons name="hardware-chip-outline" size={14} color="#6b7280" />
-            <Text style={styles.detailText}>{manufacturer} {model}</Text>
-          </View>
-        ) : null}
-
-        {serialNum ? (
-          <View style={styles.detailRow}>
-            <Ionicons name="finger-print-outline" size={14} color="#6b7280" />
-            <Text style={styles.detailText}>S/N: {serialNum}</Text>
-          </View>
-        ) : null}
-
-        {app?.applicationNumber ? (
-          <View style={styles.detailRow}>
-            <Ionicons name="document-text-outline" size={14} color="#6b7280" />
-            <Text style={styles.detailText}>{app.applicationNumber}</Text>
-          </View>
-        ) : null}
-
+        <Text style={styles.cardType}>{typeName}</Text>
         <View style={styles.detailRow}>
-          <Ionicons name="time-outline" size={14} color="#6b7280" />
-          <Text style={styles.detailText}>{new Date(item.scheduledAt).toLocaleString()}</Text>
+          <Ionicons name="clipboard-outline" size={14} color="#f97316" />
+          <Text style={[styles.detailText, { color: '#f97316' }]}>Awaiting scheduling by admin</Text>
         </View>
-
-        {item.location ? (
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={14} color="#6b7280" />
-            <Text style={styles.detailText}>{item.location}</Text>
-          </View>
-        ) : null}
       </TouchableOpacity>
     );
   };
@@ -122,7 +170,7 @@ export default function AssignmentsScreen({ navigation }: any) {
 
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
         onRefresh={refetch}
         refreshing={false}
         contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : styles.list}
@@ -131,7 +179,7 @@ export default function AssignmentsScreen({ navigation }: any) {
           <EmptyState
             icon="clipboard-outline"
             title="No Assignments"
-            message={activeFilter === 'All' ? 'You have no scheduled inspections.' : `No ${FILTER_LABELS[activeFilter].toLowerCase()} inspections.`}
+            message={activeFilter === 'All' ? 'You have no assignments or inspections.' : `No ${FILTER_LABELS[activeFilter].toLowerCase()} items.`}
           />
         }
       />
@@ -155,8 +203,10 @@ const styles = StyleSheet.create({
   emptyContainer: { flex: 1 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   cardOverdue: { borderLeftWidth: 3, borderLeftColor: '#f97316' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  cardType: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
+  cardPending: { borderLeftWidth: 3, borderLeftColor: '#f97316' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  cardAppNumber: { fontSize: 15, fontWeight: '700', color: '#1f2937', flex: 1 },
+  cardType: { fontSize: 14, fontWeight: '500', color: '#6b7280', marginBottom: 4 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   detailText: { fontSize: 13, color: '#6b7280' },
 });
