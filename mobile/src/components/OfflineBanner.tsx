@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { processSyncQueue } from '../services/syncService';
@@ -10,6 +10,7 @@ export default function OfflineBanner() {
   const [lastSync, setLastSync] = useState<{ synced: number; failed: number } | null>(null);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     if (isOnline && !syncing) {
       setSyncing(true);
       processSyncQueue()
@@ -20,6 +21,7 @@ export default function OfflineBanner() {
     }
   }, [isOnline]);
 
+  if (Platform.OS === 'web') return null;
   if (isOnline && !syncing && !lastSync) return null;
 
   return (

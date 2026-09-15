@@ -1,7 +1,10 @@
+import { Platform } from 'react-native';
 import api from './api';
-import { getPendingSyncItems, markSynced, clearSyncedItems } from './database';
 
 export async function processSyncQueue(): Promise<{ synced: number; failed: number }> {
+  if (Platform.OS === 'web') return { synced: 0, failed: 0 };
+
+  const { getPendingSyncItems, markSynced, clearSyncedItems } = require('./database');
   const items = await getPendingSyncItems();
   let synced = 0;
   let failed = 0;
@@ -51,5 +54,9 @@ export async function queueGpsUpdate(inspectionId: string, latitude: number, lon
   await addToSyncQueue('gps', endpoint, 'POST', body);
 }
 
-// Re-export from database
-import { addToSyncQueue } from './database';
+import { addToSyncQueue as addToSyncQueueNative } from './database';
+
+async function addToSyncQueue(operation: string, endpoint: string, method: string, body: any) {
+  if (Platform.OS === 'web') return;
+  return addToSyncQueueNative(operation, endpoint, method, body);
+}

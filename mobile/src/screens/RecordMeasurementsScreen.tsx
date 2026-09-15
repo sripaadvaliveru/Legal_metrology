@@ -21,17 +21,18 @@ interface ChecklistItem {
 }
 
 export default function RecordMeasurementsScreen({ route, navigation }: any) {
-  const { inspectionId } = route.params;
+  const { inspectionId } = route.params ?? {};
 
   const { data: inspection } = useQuery({
     queryKey: ['inspection', inspectionId],
     queryFn: () => inspectionApi.get(inspectionId).then(res => res.data),
   });
 
+  const appointmentId = inspection?.appointment?.id;
   const { data: appointment } = useQuery({
-    queryKey: ['appointment', inspection?.appointmentId],
-    queryFn: () => appointmentApi.get(inspection!.appointmentId).then(res => res.data),
-    enabled: !!inspection?.appointmentId,
+    queryKey: ['appointment', appointmentId],
+    queryFn: () => appointmentApi.get(appointmentId!).then(res => res.data),
+    enabled: !!appointmentId,
   });
 
   const instrumentTypeId = appointment?.application?.instrument?.instrumentType?.id;

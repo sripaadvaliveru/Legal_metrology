@@ -6,7 +6,7 @@ import { CheckCircle, XCircle, AlertTriangle, Shield, QrCode } from 'lucide-reac
 export default function PublicVerify() {
   const { token } = useParams<{ token: string }>();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['verify', token],
     queryFn: () => publicApi.verify(token!),
     enabled: !!token,
@@ -16,6 +16,28 @@ export default function PublicVerify() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Verifying certificate...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-gray-900 text-white p-6 text-center">
+            <Shield className="w-10 h-10 mx-auto mb-2 opacity-80" />
+            <h1 className="text-lg font-bold">Legal Metrology Department</h1>
+            <p className="text-sm text-gray-300">Government of India</p>
+          </div>
+          <div className="text-center py-12 px-6">
+            <XCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
+            <p className="text-lg font-semibold text-gray-700">Verification Failed</p>
+            <p className="text-sm text-gray-500 mt-1">Unable to verify this certificate. Please check your connection and try again.</p>
+          </div>
+          <div className="bg-gray-50 p-4 text-center border-t">
+            <p className="text-xs text-gray-400">Smart Legal Metrology Verification System</p>
+          </div>
+        </div>
       </div>
     );
   }

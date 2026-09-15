@@ -48,10 +48,13 @@ export interface Application {
 export interface Assignment {
   id: string;
   applicationId: string;
+  application?: Application;
   assigneeId: string;
+  assignee?: User;
   method: 'AUTO' | 'MANUAL' | 'REASSIGNED';
   score?: number;
   reason?: string;
+  assignedAt?: string;
 }
 
 export type CertificateStatus = 'VALID' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED';

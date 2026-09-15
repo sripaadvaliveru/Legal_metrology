@@ -2,19 +2,16 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
-import { inspectionApi, certificateApi } from '../services/api';
+import { inspectionApi } from '../services/api';
 
 export default function SubmitInspectionScreen({ route, navigation }: any) {
-  const { inspectionId } = route.params;
+  const { inspectionId } = route.params ?? {};
   const [result, setResult] = useState<'PASS' | 'FAIL' | null>(null);
   const [remarks, setRemarks] = useState('');
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       await inspectionApi.submit(inspectionId, result!, remarks || undefined);
-      if (result === 'PASS') {
-        await certificateApi.generate(inspectionId);
-      }
     },
     onSuccess: () => {
       const msg = result === 'PASS'

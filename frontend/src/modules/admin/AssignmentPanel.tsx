@@ -8,6 +8,7 @@ import type { Application, User } from '@/types';
 export default function AssignmentPanel() {
   const queryClient = useQueryClient();
   const [selectedLmos, setSelectedLmos] = useState<Record<string, string>>({});
+  const [selectedTypes, setSelectedTypes] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: applications, isLoading } = useQuery({
@@ -104,7 +105,11 @@ export default function AssignmentPanel() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Assignment Type</label>
                     <select
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      defaultValue="LMO"
+                      value={selectedTypes[app.id] || 'LMO'}
+                      onChange={(e) => {
+                        setSelectedTypes({ ...selectedTypes, [app.id]: e.target.value });
+                        setSelectedLmos({ ...selectedLmos, [app.id]: '' });
+                      }}
                     >
                       <option value="LMO">LMO (Mobile App)</option>
                       <option value="GATC">GATC (Web Lab)</option>
@@ -118,12 +123,14 @@ export default function AssignmentPanel() {
                       onChange={(e) => setSelectedLmos({ ...selectedLmos, [app.id]: e.target.value })}
                     >
                       <option value="">Select...</option>
-                      {lmos?.map((lmo: User) => (
-                        <option key={lmo.id} value={lmo.id}>{lmo.name} ({lmo.email})</option>
-                      ))}
-                      {gatcs?.map((gatc: User) => (
-                        <option key={gatc.id} value={gatc.id}>{gatc.name} (GATC)</option>
-                      ))}
+                      {(selectedTypes[app.id] || 'LMO') === 'LMO'
+                        ? lmos?.map((lmo: User) => (
+                            <option key={lmo.id} value={lmo.id}>{lmo.name} ({lmo.email})</option>
+                          ))
+                        : gatcs?.map((gatc: User) => (
+                            <option key={gatc.id} value={gatc.id}>{gatc.name} (GATC)</option>
+                          ))
+                      }
                     </select>
                   </div>
                 </div>

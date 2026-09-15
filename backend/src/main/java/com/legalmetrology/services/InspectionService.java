@@ -9,6 +9,7 @@ import com.legalmetrology.enums.InstrumentStatus;
 import com.legalmetrology.repositories.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,23 @@ public class InspectionService {
     private final ApplicationRepository applicationRepository;
     private final ChecklistTemplateRepository checklistTemplateRepository;
     private final NotificationService notificationService;
+    private final ApplicationStatusHistoryRepository statusHistoryRepository;
+
+    private final AtomicLong CERT_COUNTER = new AtomicLong(0);
+
+    @PostConstruct
+    public void init() {
+        long maxSeq = certificateRepository.findAll().stream()
+                .map(Certificate::getCertificateNumber)
+                .filter(id -> id != null && id.startsWith("CERT-LM-"))
+                .map(id -> {
+                    try { return Long.parseLong(id.substring(id.lastIndexOf('-') + 1)); }
+                    catch (Exception e) { return 0L; }
+                })
+                .mapToLong(Long::longValue)
+                .max().orElse(0L);
+        CERT_COUNTER.set(maxSeq + 1);
+    }
 
     @Transactional
     public Inspection createInspection(String appointmentId, String inspectorEmail) {
@@ -75,12 +94,17 @@ public class InspectionService {
         if (result == InspectionResult.PASS) {
             application.setStatus(ApplicationStatus.PASSED);
             applicationRepository.save(application);
+            saveStatusHistory(application, ApplicationStatus.PASSED, inspection.getInspector().getEmail());
 
             generateCertificate(inspection);
 
             application.setStatus(ApplicationStatus.CERTIFICATE_GENERATED);
+            applicationRepository.save(application);
+            saveStatusHistory(application, ApplicationStatus.CERTIFICATE_GENERATED, inspection.getInspector().getEmail());
+
             application.setStatus(ApplicationStatus.COMPLETED);
             applicationRepository.save(application);
+            saveStatusHistory(application, ApplicationStatus.COMPLETED, inspection.getInspector().getEmail());
 
             Instrument instrument = application.getInstrument();
             instrument.setStatus(InstrumentStatus.VERIFIED);
@@ -88,6 +112,7 @@ public class InspectionService {
         } else if (result == InspectionResult.FAIL) {
             application.setStatus(ApplicationStatus.REINSPECTION_REQUIRED);
             applicationRepository.save(application);
+            saveStatusHistory(application, ApplicationStatus.REINSPECTION_REQUIRED, inspection.getInspector().getEmail());
         }
 
         try {
@@ -177,7 +202,7 @@ public class InspectionService {
 
         String certificateNumber = String.format("CERT-LM-%d-%06d",
                 LocalDate.now().getYear(),
-                certificateRepository.count() + 1);
+                CERT_COUNTER.getAndIncrement());
 
         String qrToken = UUID.randomUUID().toString();
 
@@ -202,5 +227,14 @@ public class InspectionService {
     public Inspection getInspectionById(String id) {
         return inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inspection not found"));
+    }
+
+    private void saveStatusHistory(Application application, ApplicationStatus status, String actor) {
+        ApplicationStatusHistory history = ApplicationStatusHistory.builder()
+                .application(application)
+                .status(status)
+                .actor(actor)
+                .build();
+        statusHistoryRepository.save(history);
     }
 }

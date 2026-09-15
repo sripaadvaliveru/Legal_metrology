@@ -7,7 +7,7 @@ import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function InspectionReviewScreen({ route, navigation }: any) {
-  const { inspectionId } = route.params;
+  const { inspectionId } = route.params ?? {};
 
   const { data: inspection, isLoading: inspectionLoading } = useQuery({
     queryKey: ['inspection', inspectionId],
@@ -20,7 +20,7 @@ export default function InspectionReviewScreen({ route, navigation }: any) {
     enabled: !!inspectionId,
   });
 
-  const appointmentId = inspection?.appointmentId;
+  const appointmentId = inspection?.appointment?.id;
   const { data: appointment } = useQuery({
     queryKey: ['appointment', appointmentId],
     queryFn: () => appointmentApi.get(appointmentId!).then(res => res.data),

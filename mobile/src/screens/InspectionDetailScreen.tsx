@@ -18,7 +18,7 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 }
 
 export default function InspectionDetailScreen({ route, navigation }: any) {
-  const { appointmentId } = route.params;
+  const { appointmentId } = route.params ?? {};
   const [gpsCheckDone, setGpsCheckDone] = useState(false);
 
   const { data: appointment, isLoading } = useQuery({

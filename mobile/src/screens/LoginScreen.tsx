@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useAuth } from '../../App';
 
 export default function LoginScreen({ navigation }: any) {
@@ -34,9 +34,8 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <View style={styles.card}>
+      <View style={styles.container}>
+        <View style={styles.card}>
             <Text style={styles.title}>Legal Metrology</Text>
             <Text style={styles.subtitle}>Verification System</Text>
 
@@ -77,9 +76,8 @@ export default function LoginScreen({ navigation }: any) {
             <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Register')} style={styles.linkBtn}>
               <Text style={styles.linkText}>Don't have an account? Register</Text>
             </TouchableOpacity>
-          </View>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </KeyboardAvoidingView>
   );
 }

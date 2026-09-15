@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const ACTIVE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'ASSIGNED', 'SCHEDULED', 'UNDER_INSPECTION', 'PASSED', 'CERTIFICATE_GENERATED'];
 
 export default function InstrumentDetailScreen({ route, navigation }: any) {
-  const { instrumentId } = route.params;
+  const { instrumentId } = route.params ?? {};
 
   const { data: instrument, isLoading, isError } = useQuery({
     queryKey: ['instrument', instrumentId],

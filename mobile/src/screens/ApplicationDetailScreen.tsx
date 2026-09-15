@@ -28,7 +28,7 @@ function getStepIndex(status: string): number {
 }
 
 export default function ApplicationDetailScreen({ route, navigation }: any) {
-  const { applicationId } = route.params;
+  const { applicationId } = route.params ?? {};
   const queryClient = useQueryClient();
 
   const { data: application, isLoading, isError } = useQuery({

@@ -34,7 +34,6 @@ public class UserController {
             }
         }
 
-        users.forEach(u -> u.setPassword(null));
         return ResponseEntity.ok(users);
     }
 }

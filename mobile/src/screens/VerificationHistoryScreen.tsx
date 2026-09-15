@@ -9,7 +9,7 @@ import EmptyState from '../components/EmptyState';
 import type { Application } from '../types';
 
 export default function VerificationHistoryScreen({ route, navigation }: any) {
-  const { instrumentId, instrumentName } = route.params;
+  const { instrumentId, instrumentName } = route.params ?? {};
 
   const { data: applications, isLoading, refetch, isError } = useQuery({
     queryKey: ['instrument-applications', instrumentId],

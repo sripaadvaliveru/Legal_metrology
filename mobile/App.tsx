@@ -149,6 +149,8 @@ function LmoNavigator() {
       <LmoStack.Screen name="InspectionReview" component={InspectionReviewScreen} options={{ title: 'Review Inspection' }} />
       <LmoStack.Screen name="SubmitInspection" component={SubmitInspectionScreen} options={{ title: 'Submit Inspection' }} />
       <LmoStack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+      <LmoStack.Screen name="ApplicationDetail" component={ApplicationDetailScreen} options={{ title: 'Application' }} />
+      <LmoStack.Screen name="InstrumentDetail" component={InstrumentDetailScreen} options={{ title: 'Instrument' }} />
       <LmoStack.Screen name="Certificates" component={CertificatesScreen} options={{ title: 'Certificates' }} />
       <LmoStack.Screen name="CertificateDetail" component={CertificateDetailScreen} options={{ title: 'Certificate' }} />
     </LmoStack.Navigator>

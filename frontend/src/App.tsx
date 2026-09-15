@@ -71,37 +71,75 @@ function AppRoutes() {
         } />
 
         {/* Business routes */}
-        <Route path="instruments" element={<BusinessDashboard />} />
-        <Route path="applications" element={
-          user?.role === 'SUPER_ADMIN' ? <ApplicationsReview /> : <BusinessDashboard />
+        <Route path="instruments" element={
+          <ProtectedRoute allowedRoles={['BUSINESS']}><BusinessDashboard /></ProtectedRoute>
         } />
-        <Route path="certificates" element={<BusinessDashboard />} />
-        <Route path="notifications" element={<BusinessDashboard />} />
+        <Route path="applications" element={
+          user?.role === 'SUPER_ADMIN'
+            ? <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><ApplicationsReview /></ProtectedRoute>
+            : <ProtectedRoute allowedRoles={['BUSINESS']}><BusinessDashboard /></ProtectedRoute>
+        } />
+        <Route path="certificates" element={
+          <ProtectedRoute allowedRoles={['BUSINESS']}><BusinessDashboard /></ProtectedRoute>
+        } />
+        <Route path="notifications" element={
+          <ProtectedRoute allowedRoles={['BUSINESS', 'LMO', 'GATC', 'SUPER_ADMIN']}><BusinessDashboard /></ProtectedRoute>
+        } />
 
         {/* LMO routes */}
         <Route path="assignments" element={
-          user?.role === 'SUPER_ADMIN' ? <AssignmentPanel /> : <LmoDashboard />
+          user?.role === 'SUPER_ADMIN'
+            ? <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AssignmentPanel /></ProtectedRoute>
+            : <ProtectedRoute allowedRoles={['LMO', 'GATC']}><LmoDashboard /></ProtectedRoute>
         } />
         <Route path="schedule" element={
-          user?.role === 'SUPER_ADMIN' ? <ScheduleAppointment /> : <LmoDashboard />
+          user?.role === 'SUPER_ADMIN'
+            ? <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><ScheduleAppointment /></ProtectedRoute>
+            : <ProtectedRoute allowedRoles={['LMO']}><LmoDashboard /></ProtectedRoute>
         } />
 
         {/* GATC routes */}
-        <Route path="tests" element={<AssignedTests />} />
-        <Route path="tests/:id" element={<TestDetail />} />
-        <Route path="appointments" element={<GatcDashboard />} />
-        <Route path="equipment" element={<GatcDashboard />} />
+        <Route path="tests" element={
+          <ProtectedRoute allowedRoles={['GATC']}><AssignedTests /></ProtectedRoute>
+        } />
+        <Route path="tests/:id" element={
+          <ProtectedRoute allowedRoles={['GATC']}><TestDetail /></ProtectedRoute>
+        } />
+        <Route path="appointments" element={
+          <ProtectedRoute allowedRoles={['GATC']}><GatcDashboard /></ProtectedRoute>
+        } />
+        <Route path="equipment" element={
+          <ProtectedRoute allowedRoles={['GATC']}><GatcDashboard /></ProtectedRoute>
+        } />
 
         {/* Admin routes */}
-        <Route path="overview" element={<AdminDashboard />} />
-        <Route path="analytics" element={<AdminDashboard />} />
-        <Route path="enforcement" element={<AdminDashboard />} />
-        <Route path="users" element={<AdminDashboard />} />
-        <Route path="roles" element={<AdminDashboard />} />
-        <Route path="districts" element={<AdminDashboard />} />
-        <Route path="jurisdictions" element={<AdminDashboard />} />
-        <Route path="rules" element={<RulesChecklists />} />
-        <Route path="audit" element={<AdminDashboard />} />
+        <Route path="overview" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="analytics" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="enforcement" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="users" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="roles" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="districts" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="jurisdictions" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
+        <Route path="rules" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><RulesChecklists /></ProtectedRoute>
+        } />
+        <Route path="audit" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+        } />
       </Route>
 
       <Route path="*" element={<Navigate to={getHomeRoute()} replace />} />

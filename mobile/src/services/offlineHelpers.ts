@@ -1,37 +1,31 @@
-import { cacheInstruments, getCachedInstruments, cacheChecklists, getCachedChecklists, cacheApplications, getCachedApplications } from './database';
+import { Platform } from 'react-native';
 
 export async function fetchAndCacheInstruments(fetchFn: () => Promise<any[]>): Promise<any[]> {
+  const data = await fetchFn();
+  if (Platform.OS === 'web') return data;
   try {
-    const data = await fetchFn();
+    const { cacheInstruments } = require('./database');
     await cacheInstruments(data);
-    return data;
-  } catch {
-    const cached = await getCachedInstruments();
-    if (cached.length > 0) return cached;
-    throw new Error('No data available offline');
-  }
+  } catch {}
+  return data;
 }
 
 export async function fetchAndCacheChecklists(instrumentTypeId: string, fetchFn: () => Promise<any[]>): Promise<any[]> {
+  const data = await fetchFn();
+  if (Platform.OS === 'web') return data;
   try {
-    const data = await fetchFn();
+    const { cacheChecklists } = require('./database');
     await cacheChecklists(data);
-    return data;
-  } catch {
-    const cached = await getCachedChecklists(instrumentTypeId);
-    if (cached.length > 0) return cached;
-    throw new Error('No checklist data available offline');
-  }
+  } catch {}
+  return data;
 }
 
 export async function fetchAndCacheApplications(fetchFn: () => Promise<any[]>): Promise<any[]> {
+  const data = await fetchFn();
+  if (Platform.OS === 'web') return data;
   try {
-    const data = await fetchFn();
+    const { cacheApplications } = require('./database');
     await cacheApplications(data);
-    return data;
-  } catch {
-    const cached = await getCachedApplications();
-    if (cached.length > 0) return cached;
-    throw new Error('No data available offline');
-  }
+  } catch {}
+  return data;
 }

@@ -133,10 +133,8 @@ export default function AssignmentsScreen({ navigation }: any) {
     const typeName = instrument?.instrumentType?.name || 'Instrument';
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.7}
+      <View
         style={[styles.card, styles.cardPending]}
-        onPress={() => {}} // No appointment yet
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardAppNumber}>{app?.applicationNumber || 'No Application'}</Text>
@@ -147,7 +145,7 @@ export default function AssignmentsScreen({ navigation }: any) {
           <Ionicons name="clipboard-outline" size={14} color="#f97316" />
           <Text style={[styles.detailText, { color: '#f97316' }]}>Awaiting scheduling by admin</Text>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 

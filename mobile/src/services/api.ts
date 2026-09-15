@@ -1,11 +1,16 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import type { AuthResponse, Business, Instrument, Application, Certificate, Appointment, Inspection, Notification, DashboardKPIs, InstrumentType, Assignment, Measurement, ChecklistTemplate } from '../types';
 
 const PRODUCTION_URL = 'https://api.legalmetrology.gov.in/api';
 
 function getBaseUrl(): string {
+  if (Platform.OS === 'web') {
+    return 'http://localhost:8080/api';
+  }
+
   const extra = Constants.expoConfig?.extra ?? Constants.manifest?.extra;
   if (extra?.apiBaseUrl) return extra.apiBaseUrl;
 

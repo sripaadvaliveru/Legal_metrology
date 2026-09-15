@@ -108,8 +108,8 @@ export interface Appointment {
 
 export interface Inspection {
   id: string;
-  appointmentId: string;
-  inspectorId: string;
+  appointment?: Appointment;
+  inspector?: User;
   result: string;
   remarks?: string;
   measurements: Measurement[];

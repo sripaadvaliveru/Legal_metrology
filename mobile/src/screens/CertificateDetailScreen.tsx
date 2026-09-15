@@ -8,7 +8,7 @@ import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function CertificateDetailScreen({ route }: any) {
-  const { certificateId } = route.params;
+  const { certificateId } = route.params ?? {};
   const { data: cert, isLoading, isError } = useQuery({
     queryKey: ['certificate', certificateId],
     queryFn: () => certificateApi.get(certificateId).then(res => res.data),
