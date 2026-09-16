@@ -76,6 +76,8 @@ export const instrumentApi = {
   listMy: () => api.get<Instrument[]>('/instruments/my'),
   get: (id: string) => api.get<Instrument>(`/instruments/${id}`),
   create: (data: any) => api.post<Instrument>('/instruments', data),
+  update: (id: string, data: any) => api.put<Instrument>(`/instruments/${id}`, data),
+  delete: (id: string) => api.delete(`/instruments/${id}`),
 };
 
 export const applicationApi = {

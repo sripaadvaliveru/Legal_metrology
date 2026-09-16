@@ -5,12 +5,13 @@ if (typeof globalThis.Buffer === 'undefined') {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useState, useEffect, createContext, useContext, useMemo } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { ActivityIndicator, View, AppState, AppStateStatus } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RoleSelectionScreen from './src/screens/RoleSelectionScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import BusinessDashboard from './src/screens/BusinessDashboard';
@@ -33,6 +34,8 @@ import InspectionDetailScreen from './src/screens/InspectionDetailScreen';
 import InspectionReviewScreen from './src/screens/InspectionReviewScreen';
 import RecordMeasurementsScreen from './src/screens/RecordMeasurementsScreen';
 import SubmitInspectionScreen from './src/screens/SubmitInspectionScreen';
+import LmoHistoryScreen from './src/screens/LmoHistoryScreen';
+import LmoProfileScreen from './src/screens/LmoProfileScreen';
 import { authApi, setAuthLogoutHandler } from './src/services/api';
 import type { User } from './src/types';
 import OfflineBanner from './src/components/OfflineBanner';
@@ -52,6 +55,7 @@ const AuthStack = createNativeStackNavigator();
 const BusinessStack = createNativeStackNavigator();
 const LmoStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const LmoTab = createBottomTabNavigator();
 
 interface AuthContextType {
   user: User | null;
@@ -68,6 +72,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+// ─── Business Bottom Tabs ───
 
 function BusinessTabs() {
   const insets = useSafeAreaInsets();
@@ -121,6 +127,71 @@ function BusinessTabs() {
   );
 }
 
+// ─── LMO Bottom Tabs ───
+
+function LmoTabs() {
+  const insets = useSafeAreaInsets();
+  return (
+    <LmoTab.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: '#1f2937' },
+        headerTintColor: '#fff',
+        tabBarActiveTintColor: '#10b981',
+        tabBarInactiveTintColor: '#9ca3af',
+        tabBarStyle: { paddingBottom: Math.max(insets.bottom, 4), height: 56 + Math.max(insets.bottom - 4, 0) },
+      }}
+    >
+      <LmoTab.Screen
+        name="DashboardTab"
+        component={LmoDashboard}
+        options={{
+          title: 'Home',
+          headerTitle: 'Dashboard',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="home-outline" size={size} color={color} />,
+        }}
+      />
+      <LmoTab.Screen
+        name="AssignmentsTab"
+        component={AssignmentsScreen}
+        options={{
+          title: 'Assignments',
+          headerTitle: 'My Assignments',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="clipboard-outline" size={size} color={color} />,
+        }}
+      />
+      <LmoTab.Screen
+        name="ScheduleTab"
+        component={ScheduleScreen}
+        options={{
+          title: 'Schedule',
+          headerTitle: 'My Schedule',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+        }}
+      />
+      <LmoTab.Screen
+        name="HistoryTab"
+        component={LmoHistoryScreen}
+        options={{
+          title: 'History',
+          headerTitle: 'Inspection History',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="time-outline" size={size} color={color} />,
+        }}
+      />
+      <LmoTab.Screen
+        name="ProfileTab"
+        component={LmoProfileScreen}
+        options={{
+          title: 'Profile',
+          headerTitle: 'My Profile',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="person-outline" size={size} color={color} />,
+        }}
+      />
+    </LmoTab.Navigator>
+  );
+}
+
+// ─── Business Stack Navigator ───
+
 function BusinessNavigator() {
   return (
     <BusinessStack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1f2937' }, headerTintColor: '#fff' }}>
@@ -138,12 +209,12 @@ function BusinessNavigator() {
   );
 }
 
+// ─── LMO Stack Navigator (for screens pushed on top of tabs) ───
+
 function LmoNavigator() {
   return (
     <LmoStack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1f2937' }, headerTintColor: '#fff' }}>
-      <LmoStack.Screen name="LmoHome" component={LmoDashboard} options={{ title: 'Dashboard' }} />
-      <LmoStack.Screen name="Schedule" component={ScheduleScreen} options={{ title: 'Schedule' }} />
-      <LmoStack.Screen name="Assignments" component={AssignmentsScreen} options={{ title: 'My Assignments' }} />
+      <LmoStack.Screen name="LmoTabs" component={LmoTabs} options={{ headerShown: false }} />
       <LmoStack.Screen name="InspectionDetail" component={InspectionDetailScreen} options={{ title: 'Inspection' }} />
       <LmoStack.Screen name="RecordMeasurements" component={RecordMeasurementsScreen} options={{ title: 'Record Measurements' }} />
       <LmoStack.Screen name="InspectionReview" component={InspectionReviewScreen} options={{ title: 'Review Inspection' }} />
@@ -157,19 +228,25 @@ function LmoNavigator() {
   );
 }
 
-function AuthNavigator() {
+// ─── Auth Navigator (role-specific login) ───
+
+function AuthNavigator({ selectedRole }: { selectedRole: string }) {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Login" component={LoginScreen} initialParams={{ expectedRole: selectedRole }} />
       <AuthStack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, headerStyle: { backgroundColor: '#1f2937' }, headerTintColor: '#fff', title: 'Register' }} />
     </AuthStack.Navigator>
   );
 }
 
+// ─── Main App Content ───
+
 function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
 
   useEffect(() => {
     setAuthLogoutHandler(() => {
@@ -193,8 +270,15 @@ function AppContent() {
   useEffect(() => {
     const loadStoredAuth = async () => {
       try {
+        const storedRole = await AsyncStorage.getItem('selectedRole');
         const storedToken = await AsyncStorage.getItem('auth_token');
         const storedUser = await AsyncStorage.getItem('user');
+
+        if (storedRole) {
+          setSelectedRole(storedRole);
+        }
+        setRoleChecked(true);
+
         if (storedToken && storedUser) {
           setToken(storedToken);
           try {
@@ -230,6 +314,10 @@ function AppContent() {
     await AsyncStorage.removeItem('user');
   };
 
+  const handleRoleSelect = async (role: string) => {
+    setSelectedRole(role);
+  };
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -245,13 +333,21 @@ function AppContent() {
       <OfflineBanner />
       <NavigationContainer>
         {!user ? (
-          <AuthNavigator />
+          !roleChecked ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" />
+            </View>
+          ) : !selectedRole ? (
+            <RoleSelectionScreen onSelect={handleRoleSelect} />
+          ) : (
+            <AuthNavigator selectedRole={selectedRole} />
+          )
         ) : user.role === 'BUSINESS' ? (
           <BusinessNavigator />
         ) : isLmo ? (
           <LmoNavigator />
         ) : (
-          <AuthNavigator />
+          <AuthNavigator selectedRole={selectedRole || 'BUSINESS'} />
         )}
       </NavigationContainer>
     </AuthContext.Provider>

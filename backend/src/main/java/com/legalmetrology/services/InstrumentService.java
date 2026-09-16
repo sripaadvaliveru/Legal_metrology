@@ -92,4 +92,29 @@ public class InstrumentService {
         return instrumentRepository.findByInstrumentId(instrumentId)
                 .orElseThrow(() -> new RuntimeException("Instrument not found"));
     }
+
+    public Instrument updateInstrument(String id, InstrumentCreateRequest request) {
+        Instrument instrument = getInstrumentById(id);
+        InstrumentType type = instrumentTypeRepository.findById(request.getType())
+                .orElseGet(() -> instrumentTypeRepository.findByName(request.getType())
+                        .orElseThrow(() -> new RuntimeException("Instrument type not found")));
+        Establishment establishment = establishmentRepository.findById(request.getEstablishmentId())
+                .orElseThrow(() -> new RuntimeException("Establishment not found"));
+        instrument.setInstrumentType(type);
+        instrument.setManufacturer(request.getManufacturer());
+        instrument.setModel(request.getModel());
+        instrument.setSerialNumber(request.getSerialNumber());
+        instrument.setCapacityRange(request.getCapacityRange());
+        instrument.setAccuracy(request.getAccuracy());
+        instrument.setYearOfManufacture(request.getYearOfManufacture());
+        instrument.setUsage(request.getUsage());
+        instrument.setInstallationDetails(request.getInstallationDetails());
+        instrument.setEstablishment(establishment);
+        return instrumentRepository.save(instrument);
+    }
+
+    public void deleteInstrument(String id) {
+        Instrument instrument = getInstrumentById(id);
+        instrumentRepository.delete(instrument);
+    }
 }

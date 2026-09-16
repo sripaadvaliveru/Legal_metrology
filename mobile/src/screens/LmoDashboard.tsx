@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, A
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../App';
-import { analyticsApi, notificationApi, appointmentApi } from '../services/api';
+import { analyticsApi, notificationApi, appointmentApi, assignmentApi } from '../services/api';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorState, { isNetworkError } from '../components/ErrorState';
@@ -20,6 +20,13 @@ export default function LmoDashboard({ navigation }: any) {
   const { data: appointments } = useQuery({
     queryKey: ['my-appointments'],
     queryFn: () => appointmentApi.listMy().then(res => res.data),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+  const { data: assignments } = useQuery({
+    queryKey: ['my-assignments'],
+    queryFn: () => assignmentApi.listMy().then(res => res.data),
     staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -68,19 +75,24 @@ export default function LmoDashboard({ navigation }: any) {
     return d < now && a.status !== 'COMPLETED' && a.status !== 'CANCELLED';
   });
 
+  const assignedCount = (assignments || []).length;
+  const pendingAssignments = (assignments || []).filter((a: any) => a.status === 'ASSIGNED').length;
+  const reinspectionCount = (appointments || []).filter((a: any) => a.application?.status === 'RE_INSPECTION').length;
+
   const stats = [
     { label: "Today's", value: todayAppointments.length, icon: 'calendar-outline' as const, color: '#3b82f6' },
     { label: 'Upcoming', value: upcomingAppointments.length, icon: 'time-outline' as const, color: '#8b5cf6' },
-    { label: 'Overdue', value: overdueAppointments.length, icon: 'alert-outline' as const, color: '#f97316' },
-    { label: 'Completed', value: kpis?.completedApplications ?? 0, icon: 'checkmark-circle-outline' as const, color: '#10b981' },
+    { label: 'Assigned', value: assignedCount, icon: 'clipboard-outline' as const, color: '#06b6d4' },
+    { label: 'Pending', value: pendingAssignments, icon: 'hourglass-outline' as const, color: '#f59e0b' },
+    { label: 'Re-inspection', value: reinspectionCount, icon: 'refresh-outline' as const, color: '#ec4899' },
     { label: 'Failed', value: kpis?.failedInspections ?? 0, icon: 'close-circle-outline' as const, color: '#ef4444' },
   ];
 
   const menuItems = [
-    { label: 'My Assignments', icon: 'clipboard-outline' as const, screen: 'Assignments' },
-    { label: 'Schedule', icon: 'calendar-outline' as const, screen: 'Schedule' },
+    { label: 'My Assignments', icon: 'clipboard-outline' as const, screen: 'AssignmentsTab' },
+    { label: 'Schedule', icon: 'calendar-outline' as const, screen: 'ScheduleTab' },
+    { label: 'History', icon: 'time-outline' as const, screen: 'HistoryTab' },
     { label: 'Notifications', icon: 'notifications-outline' as const, screen: 'Notifications', badge: unreadData?.count },
-    { label: 'Certificates', icon: 'ribbon-outline' as const, screen: 'Certificates' },
   ];
 
   const renderAppointmentCard = (item: any) => {
@@ -180,7 +192,7 @@ export default function LmoDashboard({ navigation }: any) {
           </View>
           {upcomingAppointments.slice(0, 3).map(renderAppointmentCard)}
           {upcomingAppointments.length > 3 && (
-            <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn} onPress={() => navigation.navigate('Assignments')}>
+            <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn} onPress={() => navigation.navigate('AssignmentsTab')}>
               <Text style={styles.seeAllText}>See All ({upcomingAppointments.length})</Text>
               <Ionicons name="chevron-forward" size={16} color="#8b5cf6" />
             </TouchableOpacity>

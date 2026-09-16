@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, A
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../App';
-import { analyticsApi, notificationApi } from '../services/api';
+import { analyticsApi, notificationApi, applicationApi } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge, { getStatusVariant } from '../components/Badge';
 import ErrorState, { isNetworkError } from '../components/ErrorState';
@@ -20,6 +20,11 @@ export default function BusinessDashboard({ navigation }: any) {
     queryKey: ['unread-count'],
     queryFn: () => notificationApi.unreadCount().then(res => res.data),
     staleTime: 30000,
+  });
+  const { data: applications } = useQuery({
+    queryKey: ['my-applications'],
+    queryFn: () => applicationApi.list().then((res: any) => res.data),
+    staleTime: 60000,
   });
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -42,17 +47,26 @@ export default function BusinessDashboard({ navigation }: any) {
     return <ErrorState onRetry={() => refetch()} isNetworkError={isNetworkError(error)} />;
   }
 
+  const failedApps = (applications || []).filter((a: any) => a.status === 'REJECTED' || a.status === 'FAILED');
+
   const stats = [
     { label: 'Instruments', value: kpis?.totalInstruments ?? 0, icon: 'hardware-chip-outline' as const, color: '#3b82f6' },
     { label: 'Verified', value: kpis?.verifiedInstruments ?? 0, icon: 'checkmark-circle-outline' as const, color: '#10b981' },
     { label: 'Pending', value: kpis?.pendingApplications ?? 0, icon: 'document-text-outline' as const, color: '#f59e0b' },
+    { label: 'Failed', value: failedApps.length, icon: 'close-circle-outline' as const, color: '#ef4444' },
     { label: 'Expiring', value: kpis?.expiringSoon ?? 0, icon: 'time-outline' as const, color: '#f97316' },
     { label: 'Expired', value: kpis?.expiredInstruments ?? 0, icon: 'alert-circle-outline' as const, color: '#ef4444' },
   ];
 
+  const alerts: { icon: any; color: string; text: string }[] = [];
+  if (kpis && kpis.expiringSoon > 0) alerts.push({ icon: 'warning-outline', color: '#f97316', text: `${kpis.expiringSoon} certificate(s) expiring soon` });
+  if (kpis && kpis.expiredInstruments > 0) alerts.push({ icon: 'alert-circle-outline', color: '#ef4444', text: `${kpis.expiredInstruments} instrument(s) expired` });
+  if (unreadData && unreadData.count > 0) alerts.push({ icon: 'notifications-outline', color: '#3b82f6', text: `${unreadData.count} unread notification(s)` });
+
   const menuItems = [
     { label: 'My Instruments', icon: 'hardware-chip-outline' as const, screen: 'InstrumentsTab' },
     { label: 'Register Instrument', icon: 'add-circle-outline' as const, screen: 'RegisterInstrument' },
+    { label: 'Apply for Verification', icon: 'document-text-outline' as const, screen: 'SubmitApplication' },
     { label: 'My Applications', icon: 'document-text-outline' as const, screen: 'ApplicationsTab' },
     { label: 'My Certificates', icon: 'ribbon-outline' as const, screen: 'Certificates' },
     { label: 'Notifications', icon: 'notifications-outline' as const, screen: 'Notifications', badge: unreadData?.count },
@@ -80,6 +94,18 @@ export default function BusinessDashboard({ navigation }: any) {
           </View>
         ))}
       </View>
+
+      {alerts.length > 0 && (
+        <View style={styles.alertsSection}>
+          <Text style={styles.sectionTitle}>Alerts</Text>
+          {alerts.map((alert, index) => (
+            <View key={index} style={[styles.alertCard, { borderLeftColor: alert.color }]}>
+              <Ionicons name={alert.icon} size={20} color={alert.color} />
+              <Text style={styles.alertText}>{alert.text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {kpis?.compliancePercentage != null && (
         <View style={styles.complianceSection}>
@@ -155,6 +181,9 @@ const styles = StyleSheet.create({
   complianceBar: { height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
   complianceFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 4 },
   complianceText: { fontSize: 13, color: '#6b7280' },
+  alertsSection: { padding: 16, paddingBottom: 0 },
+  alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 8, gap: 10, borderLeftWidth: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  alertText: { fontSize: 14, color: '#1f2937', flex: 1 },
   badgeContainer: { backgroundColor: '#ef4444', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
 });

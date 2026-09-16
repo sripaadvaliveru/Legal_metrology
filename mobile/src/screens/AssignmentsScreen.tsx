@@ -9,13 +9,16 @@ import EmptyState from '../components/EmptyState';
 import ErrorState, { isNetworkError } from '../components/ErrorState';
 import type { Appointment } from '../types';
 
-const STATUS_FILTERS = ['All', 'PENDING', 'SCHEDULED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED'];
+const STATUS_FILTERS = ['All', 'PENDING', 'IN_PROGRESS', 'SCHEDULED', 'RESCHEDULED', 'COMPLETED', 'FAILED', 'RE_INSPECTION', 'CANCELLED'];
 const FILTER_LABELS: Record<string, string> = {
   All: 'All',
   PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
   SCHEDULED: 'Scheduled',
   RESCHEDULED: 'Rescheduled',
   COMPLETED: 'Completed',
+  FAILED: 'Failed',
+  RE_INSPECTION: 'Re-inspection',
   CANCELLED: 'Cancelled',
 };
 
@@ -50,7 +53,7 @@ export default function AssignmentsScreen({ navigation }: any) {
     (appointments || []).map((a: any) => ({
       id: a.id,
       type: 'appointment' as const,
-      status: a.status,
+      status: a.status === 'SCHEDULED' && new Date(a.scheduledAt) <= new Date() ? 'IN_PROGRESS' : a.status,
       data: a,
     })),
     [appointments]

@@ -65,4 +65,19 @@ public class InstrumentController {
     public ResponseEntity<Instrument> getInstrument(@PathVariable String id) {
         return ResponseEntity.ok(instrumentService.getInstrumentById(id));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('BUSINESS')")
+    public ResponseEntity<Instrument> updateInstrument(
+            @PathVariable String id,
+            @Valid @RequestBody InstrumentCreateRequest request) {
+        return ResponseEntity.ok(instrumentService.updateInstrument(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('BUSINESS')")
+    public ResponseEntity<Void> deleteInstrument(@PathVariable String id) {
+        instrumentService.deleteInstrument(id);
+        return ResponseEntity.noContent().build();
+    }
 }

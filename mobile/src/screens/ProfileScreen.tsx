@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../App';
 import { businessApi } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -91,6 +92,24 @@ export default function ProfileScreen({ navigation }: any) {
         </>
       )}
 
+      <TouchableOpacity
+        activeOpacity={0.7}
+        style={styles.menuItem}
+        onPress={() => Alert.alert('Change Account Type', 'Switch between Business and LMO roles?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Change', onPress: async () => {
+            await AsyncStorage.removeItem('selectedRole');
+            await AsyncStorage.removeItem('auth_token');
+            await AsyncStorage.removeItem('user');
+            logout();
+          }},
+        ])}
+      >
+        <Ionicons name="swap-horizontal-outline" size={22} color="#3b82f6" />
+        <Text style={[styles.menuLabel, { color: '#3b82f6' }]}>Change Account Type</Text>
+        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+      </TouchableOpacity>
+
       <TouchableOpacity activeOpacity={0.7} style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color="#ef4444" />
         <Text style={styles.logoutText}>Logout</Text>
@@ -116,6 +135,8 @@ const styles = StyleSheet.create({
   estInfo: { flex: 1 },
   estName: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
   estAddress: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, margin: 16, marginBottom: 0, gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  menuLabel: { flex: 1, fontSize: 16, fontWeight: '500', color: '#1f2937' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', margin: 16, padding: 16, backgroundColor: '#fff', borderRadius: 12, gap: 8, borderWidth: 1, borderColor: '#fecaca' },
   logoutText: { fontSize: 16, fontWeight: '600', color: '#ef4444' },
 });
