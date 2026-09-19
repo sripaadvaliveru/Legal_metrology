@@ -31,12 +31,12 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Test Users (ON CONFLICT DO NOTHING to prevent duplicate key errors on restart)
 INSERT INTO users (id, name, email, password, role, phone, is_active, business_id, created_at, updated_at) VALUES
-('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'LMO', '9876543211', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'GATC', '9876543212', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'DISTRICT_OFFICER', '9876543213', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'STATE_OFFICER', '9876543214', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'SUPER_ADMIN', '9876543215', true, NULL, NOW(), NOW())
+('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'LMO', '9876543211', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'GATC', '9876543212', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'DISTRICT_OFFICER', '9876543213', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'STATE_OFFICER', '9876543214', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'SUPER_ADMIN', '9876543215', true, NULL, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Instruments
