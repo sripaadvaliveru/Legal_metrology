@@ -10,8 +10,9 @@ spring:
     username: ${DB_USERNAME:lm_admin}
     password: ${DB_PASSWORD:change_me_in_production}
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
 
   jpa:
     hibernate:
@@ -30,8 +31,13 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
   servlet:
     multipart:
@@ -40,6 +46,7 @@ spring:
 
 server:
   port: ${PORT:${SERVER_PORT:8080}}
+  address: 0.0.0.0
 
 # Evidence upload
 evidence:
