@@ -25,6 +25,7 @@ public class ApplicationService {
     private final ApplicationStatusHistoryRepository statusHistoryRepository;
     private final AppointmentRepository appointmentRepository;
     private final AssignmentRepository assignmentRepository;
+    private final AssignmentService assignmentService;
     private final NotificationService notificationService;
 
     private final AtomicLong APP_COUNTER = new AtomicLong(0);
@@ -133,23 +134,39 @@ public class ApplicationService {
         Application application = getApplicationById(applicationId);
 
         if (application.getStatus() != ApplicationStatus.APPROVED
-                && application.getStatus() != ApplicationStatus.ASSIGNED) {
-            throw new RuntimeException("Application must be APPROVED or ASSIGNED before scheduling. Current status: " + application.getStatus());
+                && application.getStatus() != ApplicationStatus.ASSIGNED
+                && application.getStatus() != ApplicationStatus.SCHEDULED) {
+            throw new RuntimeException("Application must be APPROVED, ASSIGNED, or SCHEDULED before scheduling. Current status: " + application.getStatus());
         }
 
         List<Assignment> assignments = assignmentRepository.findByApplicationId(applicationId);
+        Assignment assignment;
         if (assignments.isEmpty()) {
-            throw new RuntimeException("Application must be assigned before scheduling");
+            // Automatically assign an eligible LMO if not yet assigned
+            assignment = assignmentService.autoAssign(applicationId);
+        } else {
+            assignment = assignments.get(0);
         }
-        Assignment assignment = assignments.get(0);
 
-        Appointment appointment = Appointment.builder()
-                .application(application)
-                .assignment(assignment)
-                .scheduledAt(request.getScheduledAt())
-                .location(request.getLocation())
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
+        String location = (request.getLocation() != null && !request.getLocation().trim().isEmpty())
+                ? request.getLocation().trim()
+                : "On-site Verification";
+
+        Appointment appointment = appointmentRepository.findByApplicationId(applicationId).orElse(null);
+        if (appointment == null) {
+            appointment = Appointment.builder()
+                    .application(application)
+                    .assignment(assignment)
+                    .scheduledAt(request.getScheduledAt())
+                    .location(location)
+                    .status(AppointmentStatus.SCHEDULED)
+                    .build();
+        } else {
+            appointment.setAssignment(assignment);
+            appointment.setScheduledAt(request.getScheduledAt());
+            appointment.setLocation(location);
+            appointment.setStatus(AppointmentStatus.SCHEDULED);
+        }
 
         appointment = appointmentRepository.save(appointment);
 
@@ -169,9 +186,11 @@ public class ApplicationService {
             notificationService.createNotificationByEmail(businessUser.getEmail(), "APPLICATION_SCHEDULED",
                     "Your application " + application.getApplicationNumber() + " has been scheduled for " + request.getScheduledAt() + ".",
                     "Application", application.getId());
-            notificationService.createNotificationByEmail(assignment.getAssignee().getEmail(), "INSPECTION_SCHEDULED",
-                    "Inspection for application " + application.getApplicationNumber() + " scheduled at " + request.getLocation(),
-                    "Appointment", appointment.getId());
+            if (assignment.getAssignee() != null) {
+                notificationService.createNotificationByEmail(assignment.getAssignee().getEmail(), "INSPECTION_SCHEDULED",
+                        "Inspection for application " + application.getApplicationNumber() + " scheduled at " + location,
+                        "Appointment", appointment.getId());
+            }
         } catch (Exception ignored) {}
 
         return appointment;

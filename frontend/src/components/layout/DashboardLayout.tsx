@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard, Package, FileText, ClipboardCheck,
-  Settings, Bell, LogOut, Menu, X, QrCode, Clock, Users, UserCheck
+  Settings, Bell, LogOut, Menu, X, QrCode, Users, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -30,11 +30,19 @@ const roleMenus: Record<string, { label: string; icon: any; path: string }[]> = 
   ],
   DISTRICT_OFFICER: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Coming Soon', icon: Clock, path: '/dashboard' },
+    { label: 'Review Applications', icon: FileText, path: '/dashboard/applications' },
+    { label: 'Assign Officers', icon: UserCheck, path: '/dashboard/assignments' },
+    { label: 'Schedule Inspections', icon: ClipboardCheck, path: '/dashboard/schedule' },
+    { label: 'Rules & Checklists', icon: Settings, path: '/dashboard/rules' },
+    { label: 'Notifications', icon: Bell, path: '/dashboard/notifications' },
   ],
   STATE_OFFICER: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Coming Soon', icon: Clock, path: '/dashboard' },
+    { label: 'Review Applications', icon: FileText, path: '/dashboard/applications' },
+    { label: 'Assign Officers', icon: UserCheck, path: '/dashboard/assignments' },
+    { label: 'Schedule Inspections', icon: ClipboardCheck, path: '/dashboard/schedule' },
+    { label: 'Rules & Checklists', icon: Settings, path: '/dashboard/rules' },
+    { label: 'Notifications', icon: Bell, path: '/dashboard/notifications' },
   ],
   SUPER_ADMIN: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
