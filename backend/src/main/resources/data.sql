@@ -1,18 +1,7 @@
 -- Seed data for Legal Metrology Verification System
--- Run this after the application starts and Hibernate creates the tables
 
 -- Password: password123 (BCrypt hashed)
 -- Hash generated with: BCryptPasswordEncoder.encode("password123")
-
--- Test Users (ON CONFLICT DO NOTHING to prevent duplicate key errors on restart)
-INSERT INTO users (id, name, email, password, role, phone, is_active, business_id, created_at, updated_at) VALUES
-('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'LMO', '9876543211', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'GATC', '9876543212', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'DISTRICT_OFFICER', '9876543213', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'STATE_OFFICER', '9876543214', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'SUPER_ADMIN', '9876543215', true, NULL, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
 
 -- Instrument Types
 INSERT INTO instrument_types (id, name, description, validity_months) VALUES
@@ -40,13 +29,20 @@ INSERT INTO establishments (id, name, address, city, district, state, pincode, l
 ('e0000001-0000-0000-0000-000000000001', 'Kumar Enterprises - Main', '123 Main St', 'Hyderabad', 'Hyderabad', 'Telangana', '500001', 17.3850, 78.4867, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- Test Users (ON CONFLICT DO NOTHING to prevent duplicate key errors on restart)
+INSERT INTO users (id, name, email, password, role, phone, is_active, business_id, created_at, updated_at) VALUES
+('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'LMO', '9876543211', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'GATC', '9876543212', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'DISTRICT_OFFICER', '9876543213', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'STATE_OFFICER', '9876543214', true, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'SUPER_ADMIN', '9876543215', true, NULL, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
 -- Instruments
 INSERT INTO instruments (id, instrument_id, manufacturer, model, serial_number, capacity_range, accuracy, year_of_manufacture, usage, status, instrument_type_id, establishment_id, created_at, updated_at) VALUES
 ('f0000001-0000-0000-0000-000000000001', 'LM-INST-2026-000001', 'Avery India', 'WS-500', 'SN-12345', '0-500kg', 'Class III', 2024, 'Commercial weighing', 'REGISTERED', 'b0000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000001', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
-
--- Fix existing business user link (ON CONFLICT DO NOTHING won't update)
-UPDATE users SET business_id = 'd0000001-0000-0000-0000-000000000001' WHERE id = 'a0000001-0000-0000-0000-000000000001' AND business_id IS NULL;
 
 -- Clean up broken test application rows (and their children) if they exist
 DELETE FROM application_status_history WHERE application_id = 'aa000001-0000-0000-0000-000000000001' OR application_id IN (SELECT id FROM applications WHERE application_number = 'APP-2026-000001');
