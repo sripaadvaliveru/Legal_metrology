@@ -7,8 +7,8 @@ spring:
 
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/legal_metrology}
-    username: ${DB_USERNAME:lm_admin}
-    password: ${DB_PASSWORD:change_me_in_production}
+    username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:lm_admin}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:change_me_in_production}}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
