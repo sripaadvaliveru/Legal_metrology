@@ -6,7 +6,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/legal_metrology}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/legal_metrology}
     username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:lm_admin}}
     password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:change_me_in_production}}
     hikari:
