@@ -32,7 +32,7 @@
       "expo-sqlite"
     ],
     "extra": {
-      "apiBaseUrl": "https://legalmetrology-production-e7ae.up.railway.app/api",
+      "apiBaseUrl": "https://legalmetrology-production-b9be.up.railway.app/api",
       "eas": {
         "projectId": "YOUR_EAS_PROJECT_ID"
       }
