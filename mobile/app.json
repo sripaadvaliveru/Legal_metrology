@@ -21,13 +21,21 @@
         "backgroundColor": "#1f2937"
       },
       "package": "com.legalmetrology.mobile",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA"
+      ]
     },
     "plugins": [
       "expo-sqlite"
     ],
     "extra": {
-      "apiBaseUrl": "http://192.168.1.7:8080/api"
+      "apiBaseUrl": "http://192.168.1.6:8080/api",
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
     }
   }
 }

@@ -15,8 +15,9 @@ export default function OfflineBanner() {
       setSyncing(true);
       processSyncQueue()
         .then(result => {
-          if (result.synced > 0) setLastSync(result);
+          if (result && result.synced > 0) setLastSync(result);
         })
+        .catch(() => {})
         .finally(() => setSyncing(false));
     }
   }, [isOnline]);

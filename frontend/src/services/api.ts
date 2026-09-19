@@ -110,7 +110,13 @@ export const analyticsApi = {
 
 // Users (admin)
 export const userApi = {
+  list: (role?: string) => api.get<User[]>('/users', { params: role ? { role } : {} }),
   listByRole: (role: string) => api.get<User[]>(`/users?role=${role}`),
+  create: (data: { name: string; email: string; password: string; role: string; phone?: string; jurisdictionId?: string }) =>
+    api.post<User>('/users', data),
+  update: (id: string, data: Record<string, any>) =>
+    api.put<User>(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
 };
 
 // Instrument Types

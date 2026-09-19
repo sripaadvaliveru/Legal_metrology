@@ -5,7 +5,10 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  phone?: string;
   jurisdiction?: string;
+  jurisdictionId?: string;
+  isActive?: boolean;
 }
 
 export interface AuthResponse {

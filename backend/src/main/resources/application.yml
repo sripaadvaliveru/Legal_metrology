@@ -6,9 +6,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/legal_metrology
-    username: lm_admin
-    password: change_me_in_production
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/legal_metrology}
+    username: ${DB_USERNAME:lm_admin}
+    password: ${DB_PASSWORD:change_me_in_production}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -47,7 +47,7 @@ evidence:
 
 # JWT Configuration
 jwt:
-  secret: sih2026-legal-metrology-jwt-secret-key-that-is-long-enough-for-hs256
+  secret: ${JWT_SECRET:sih2026-legal-metrology-jwt-secret-key-that-is-long-enough-for-hs256}
   expiration-ms: 86400000
   refresh-expiration-ms: 604800000
 
@@ -83,7 +83,7 @@ springdoc:
 # Logging
 logging:
   level:
-    com.legalmetrology: DEBUG
+    com.legalmetrology: INFO
     org.springframework.security: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

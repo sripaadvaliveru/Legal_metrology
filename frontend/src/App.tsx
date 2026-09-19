@@ -12,6 +12,7 @@ import ApplicationsReview from '@/modules/admin/ApplicationsReview';
 import AssignmentPanel from '@/modules/admin/AssignmentPanel';
 import ScheduleAppointment from '@/modules/admin/ScheduleAppointment';
 import RulesChecklists from '@/modules/admin/RulesChecklists';
+import UserManagement from '@/modules/admin/UserManagement';
 import AssignedTests from '@/modules/gatc/AssignedTests';
 import TestDetail from '@/modules/gatc/TestDetail';
 import PublicVerify from '@/modules/public-verification/PublicVerify';
@@ -123,7 +124,7 @@ function AppRoutes() {
           <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
         } />
         <Route path="users" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><UserManagement /></ProtectedRoute>
         } />
         <Route path="roles" element={
           <ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminDashboard /></ProtectedRoute>
