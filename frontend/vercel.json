@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-        "destination": "https://legalmetrology-production-e7ae.up.railway.app/api/:path*"
+        "destination": "https://legalmetrology-production-b9be.up.railway.app/api/:path*"
     },
     {
       "source": "/((?!assets/).*)",
