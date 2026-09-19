@@ -23,7 +23,7 @@ export default function CertificateDetailScreen({ route }: any) {
     );
   }
 
-  const verifyUrl = `https://legalmetrology.gov.in/verify/${cert.qrToken}`;
+  const verifyUrl = `https://legal-metrology-atfjnk5y0-sai-sripaad-s-projects.vercel.app/verify/${cert.qrToken}`;
 
   const handleShare = async () => {
     try {
