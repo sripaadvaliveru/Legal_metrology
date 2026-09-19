@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "appointments")
@@ -27,7 +28,7 @@ public class Appointment extends BaseEntity {
     private Assignment assignment;
 
     @Column(name = "scheduled_at", nullable = false)
-    private LocalDateTime scheduledAt;
+    private OffsetDateTime scheduledAt;
 
     private String location;
 

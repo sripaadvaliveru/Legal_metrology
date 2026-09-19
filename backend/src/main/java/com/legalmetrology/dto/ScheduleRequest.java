@@ -3,12 +3,12 @@ package com.legalmetrology.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 public class ScheduleRequest {
     @NotNull
-    private LocalDateTime scheduledAt;
+    private OffsetDateTime scheduledAt;
 
     private String location;
 }

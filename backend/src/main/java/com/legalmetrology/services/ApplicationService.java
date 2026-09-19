@@ -132,8 +132,9 @@ public class ApplicationService {
     public Appointment scheduleApplication(String applicationId, ScheduleRequest request, String actor) {
         Application application = getApplicationById(applicationId);
 
-        if (application.getStatus() != ApplicationStatus.APPROVED) {
-            throw new RuntimeException("Application must be APPROVED before scheduling. Current status: " + application.getStatus());
+        if (application.getStatus() != ApplicationStatus.APPROVED
+                && application.getStatus() != ApplicationStatus.ASSIGNED) {
+            throw new RuntimeException("Application must be APPROVED or ASSIGNED before scheduling. Current status: " + application.getStatus());
         }
 
         List<Assignment> assignments = assignmentRepository.findByApplicationId(applicationId);
