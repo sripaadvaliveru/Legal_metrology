@@ -13,6 +13,7 @@ import AssignmentPanel from '@/modules/admin/AssignmentPanel';
 import ScheduleAppointment from '@/modules/admin/ScheduleAppointment';
 import RulesChecklists from '@/modules/admin/RulesChecklists';
 import UserManagement from '@/modules/admin/UserManagement';
+import CertificatesView from '@/modules/user/CertificatesView';
 import AssignedTests from '@/modules/gatc/AssignedTests';
 import TestDetail from '@/modules/gatc/TestDetail';
 import PublicVerify from '@/modules/public-verification/PublicVerify';
@@ -81,7 +82,7 @@ function AppRoutes() {
             : <ProtectedRoute allowedRoles={['BUSINESS']}><BusinessDashboard /></ProtectedRoute>
         } />
         <Route path="certificates" element={
-          <ProtectedRoute allowedRoles={['BUSINESS', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><BusinessDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['BUSINESS', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><CertificatesView /></ProtectedRoute>
         } />
         <Route path="notifications" element={
           <ProtectedRoute allowedRoles={['BUSINESS', 'LMO', 'GATC', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><BusinessDashboard /></ProtectedRoute>

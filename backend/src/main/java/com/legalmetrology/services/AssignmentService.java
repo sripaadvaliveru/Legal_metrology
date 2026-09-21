@@ -124,12 +124,100 @@ public class AssignmentService {
     }
 
     private double calculateScore(User lmo, Application application) {
-        double jurisdictionScore = 0.8;
-        double competencyScore = 0.9;
-        double availabilityScore = 1.0;
-        double workloadScore = 0.7;
-        double distanceScore = 0.5;
-        double priorityScore = 0.5;
+        // Jurisdiction score: 1.0 if LMO's jurisdiction matches instrument's establishment jurisdiction
+        double jurisdictionScore = 0.0;
+        if (lmo.getJurisdictionId() != null) {
+            try {
+                Instrument instrument = application.getInstrument();
+                if (instrument != null && instrument.getEstablishment() != null) {
+                    Establishment establishment = instrument.getEstablishment();
+                    if (establishment.getJurisdiction() != null) {
+                        if (lmo.getJurisdictionId().equals(establishment.getJurisdiction().getId())) {
+                            jurisdictionScore = 1.0;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // If any error in navigation, jurisdiction score remains 0.0
+            }
+        }
+
+        // Competency score: 1.0 if LMO has competency for the instrument type
+        double competencyScore = 0.0;
+        if (lmo.getCompetency() != null) {
+            try {
+                Instrument instrument = application.getInstrument();
+                if (instrument != null && instrument.getInstrumentType() != null) {
+                    if (lmo.getCompetency().getId().equals(instrument.getInstrumentType().getId())) {
+                        competencyScore = 1.0;
+                    }
+                }
+            } catch (Exception e) {
+                // If any error in navigation, competency score remains 0.0
+            }
+        }
+
+        // Availability score: 1.0 if LMO is active
+        double availabilityScore = lmo.getIsActive() != null && lmo.getIsActive() ? 1.0 : 0.0;
+
+        // Workload score: Based on current assignment count (inverse - lower workload = higher score)
+        // Max 10 assignments considered as full workload
+        double workloadScore = 1.0;
+        try {
+            List<Assignment> currentAssignments = assignmentRepository.findByAssigneeId(lmo.getId());
+            int assignmentCount = currentAssignments.size();
+            // Normalize: 0 assignments = 1.0 score, 10+ assignments = 0.0 score
+            workloadScore = Math.max(0.0, 1.0 - (assignmentCount / 10.0));
+        } catch (Exception e) {
+            // If error calculating workload, default to neutral score
+            workloadScore = 0.5;
+        }
+
+        // Distance score: Since we don't have lat/long for users, use jurisdiction proximity
+        // For now, if jurisdiction matches, full score; if same state but different district, partial; else 0
+        double distanceScore = 0.0;
+        if (lmo.getJurisdictionId() != null) {
+            try {
+                Instrument instrument = application.getInstrument();
+                if (instrument != null && instrument.getEstablishment() != null) {
+                    Establishment establishment = instrument.getEstablishment();
+                    if (establishment.getJurisdiction() != null) {
+                        String lmoJurisdictionId = lmo.getJurisdictionId();
+                        String establishmentJurisdictionId = establishment.getJurisdiction().getId();
+
+                        if (lmoJurisdictionId.equals(establishmentJurisdictionId)) {
+                            distanceScore = 1.0; // Same jurisdiction
+                        } else {
+                            // Check if same state (assuming jurisdiction structure includes state)
+                            // This is simplified - in reality we'd want to check jurisdiction hierarchy
+                            distanceScore = 0.3; // Partial credit for nearby jurisdiction
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // If error, distance score remains 0.0
+            }
+        }
+
+        // Priority score: Based on application type and urgency
+        double priorityScore = 0.5; // Default medium priority
+        try {
+            ApplicationType type = application.getType();
+            if (type != null) {
+                // Re-verification might get slightly higher priority to maintain validity
+                if (type == ApplicationType.RE_VERIFICATION) {
+                    priorityScore = 0.7;
+                }
+                // Initial verification gets standard priority
+                else if (type == ApplicationType.INITIAL_VERIFICATION) {
+                    priorityScore = 0.5;
+                }
+            }
+
+            // Could also factor in how long application has been pending, etc.
+        } catch (Exception e) {
+            // If error, priority score remains 0.5
+        }
 
         return (jurisdictionScore * WEIGHT_JURISDICTION)
              + (competencyScore * WEIGHT_COMPETENCY)

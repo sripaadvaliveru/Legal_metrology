@@ -88,8 +88,21 @@ export const inspectionApi = {
 // Certificates
 export const certificateApi = {
   get: (id: string) => api.get<Certificate>(`/certificates/${id}`),
+  listMy: () => api.get<Certificate[]>('/certificates/my'),
   revoke: (id: string, reason: string) =>
     api.post(`/certificates/${id}/revoke`, { reason }),
+  getPdfUrl: (id: string) => `${API_BASE}/certificates/${id}/pdf`,
+  getQrUrl: (tokenOrId: string) => `${API_BASE}/public/qr/${tokenOrId}`,
+};
+
+// Evidence
+export const evidenceApi = {
+  upload: (formData: FormData) =>
+    api.post<{ url: string; filename: string }>('/evidence/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  uploadBase64: (base64: string) =>
+    api.post<{ url: string; filename: string }>('/evidence/upload-base64', { base64 }),
 };
 
 // Public Verification
@@ -136,14 +149,6 @@ export const checklistApi = {
   update: (id: string, data: { templateName: string; description: string; checklistItems: string }) =>
     api.put<ChecklistTemplate>(`/checklist-templates/${id}`, data),
   delete: (id: string) => api.delete(`/checklist-templates/${id}`),
-};
-
-// Evidence Upload
-export const evidenceApi = {
-  upload: (formData: FormData) =>
-    api.post<{ url: string; filename: string }>('/evidence/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
 };
 
 export default api;

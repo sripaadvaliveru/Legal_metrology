@@ -22,4 +22,5 @@ public class UserCreateRequest {
 
     private String phone;
     private String jurisdictionId;
+    private String competencyId;
 }

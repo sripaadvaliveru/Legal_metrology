@@ -1,6 +1,6 @@
 package com.legalmetrology.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.legalmetrology.enums.CertificateStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,11 +22,12 @@ public class Certificate extends BaseEntity {
     @Column(name = "certificate_number", unique = true, nullable = false)
     private String certificateNumber;
 
-    @JsonIgnore
+    @JsonIgnoreProperties({"establishment", "applications", "hibernateLazyInitializer", "handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;
 
+    @JsonIgnoreProperties({"appointment", "inspector", "measurements", "hibernateLazyInitializer", "handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inspection_id", nullable = false)
     private Inspection inspection;

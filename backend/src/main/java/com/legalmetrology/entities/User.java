@@ -39,6 +39,10 @@ public class User extends BaseEntity {
     @Column(name = "jurisdiction_id")
     private String jurisdictionId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "competency_id")
+    private InstrumentType competency;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

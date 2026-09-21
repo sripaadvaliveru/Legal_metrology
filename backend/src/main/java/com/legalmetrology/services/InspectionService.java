@@ -3,6 +3,7 @@ package com.legalmetrology.services;
 import com.legalmetrology.dto.MeasurementBatchRequest;
 import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.ApplicationStatus;
+import com.legalmetrology.enums.AppointmentStatus;
 import com.legalmetrology.enums.CertificateStatus;
 import com.legalmetrology.enums.InspectionResult;
 import com.legalmetrology.enums.InstrumentStatus;
@@ -89,39 +90,50 @@ public class InspectionService {
         inspection.setCompletedAt(java.time.LocalDateTime.now());
 
         Appointment appointment = inspection.getAppointment();
-        Application application = appointment.getApplication();
-
-        if (result == InspectionResult.PASS) {
-            application.setStatus(ApplicationStatus.PASSED);
-            applicationRepository.save(application);
-            saveStatusHistory(application, ApplicationStatus.PASSED, inspection.getInspector().getEmail());
-
-            generateCertificate(inspection);
-
-            application.setStatus(ApplicationStatus.CERTIFICATE_GENERATED);
-            applicationRepository.save(application);
-            saveStatusHistory(application, ApplicationStatus.CERTIFICATE_GENERATED, inspection.getInspector().getEmail());
-
-            application.setStatus(ApplicationStatus.COMPLETED);
-            applicationRepository.save(application);
-            saveStatusHistory(application, ApplicationStatus.COMPLETED, inspection.getInspector().getEmail());
-
-            Instrument instrument = application.getInstrument();
-            instrument.setStatus(InstrumentStatus.VERIFIED);
-            instrumentRepository.save(instrument);
-        } else if (result == InspectionResult.FAIL) {
-            application.setStatus(ApplicationStatus.REINSPECTION_REQUIRED);
-            applicationRepository.save(application);
-            saveStatusHistory(application, ApplicationStatus.REINSPECTION_REQUIRED, inspection.getInspector().getEmail());
+        if (appointment != null) {
+            appointment.setStatus(AppointmentStatus.COMPLETED);
+            appointmentRepository.save(appointment);
         }
 
-        try {
-            User businessUser = application.getApplicant();
-            String resultLabel = result == InspectionResult.PASS ? "passed" : "failed";
-            notificationService.createNotificationByEmail(businessUser.getEmail(), "INSPECTION_" + result.name(),
-                    "Inspection for application " + application.getApplicationNumber() + " has " + resultLabel + ".",
-                    "Application", application.getId());
-        } catch (Exception ignored) {}
+        Application application = appointment != null ? appointment.getApplication() : null;
+
+        if (application != null) {
+            if (result == InspectionResult.PASS) {
+                application.setStatus(ApplicationStatus.PASSED);
+                applicationRepository.save(application);
+                saveStatusHistory(application, ApplicationStatus.PASSED, inspection.getInspector().getEmail());
+
+                generateCertificate(inspection);
+
+                application.setStatus(ApplicationStatus.CERTIFICATE_GENERATED);
+                applicationRepository.save(application);
+                saveStatusHistory(application, ApplicationStatus.CERTIFICATE_GENERATED, inspection.getInspector().getEmail());
+
+                application.setStatus(ApplicationStatus.COMPLETED);
+                applicationRepository.save(application);
+                saveStatusHistory(application, ApplicationStatus.COMPLETED, inspection.getInspector().getEmail());
+
+                Instrument instrument = application.getInstrument();
+                if (instrument != null) {
+                    instrument.setStatus(InstrumentStatus.VERIFIED);
+                    instrumentRepository.save(instrument);
+                }
+            } else if (result == InspectionResult.FAIL) {
+                application.setStatus(ApplicationStatus.REINSPECTION_REQUIRED);
+                applicationRepository.save(application);
+                saveStatusHistory(application, ApplicationStatus.REINSPECTION_REQUIRED, inspection.getInspector().getEmail());
+            }
+
+            try {
+                User businessUser = application.getApplicant();
+                if (businessUser != null) {
+                    String resultLabel = result == InspectionResult.PASS ? "passed" : "failed";
+                    notificationService.createNotificationByEmail(businessUser.getEmail(), "INSPECTION_" + result.name(),
+                            "Inspection for application " + application.getApplicationNumber() + " has " + resultLabel + ".",
+                            "Application", application.getId());
+                }
+            } catch (Exception ignored) {}
+        }
 
         return inspectionRepository.save(inspection);
     }

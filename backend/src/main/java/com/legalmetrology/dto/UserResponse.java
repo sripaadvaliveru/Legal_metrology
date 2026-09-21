@@ -18,4 +18,6 @@ public class UserResponse {
     private String jurisdiction;
     private String businessId;
     private String businessName;
+    private String competencyId;
+    private String competencyName;
 }

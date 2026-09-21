@@ -21,6 +21,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final InstrumentTypeRepository instrumentTypeRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER')")
@@ -59,6 +60,13 @@ public class UserController {
                 .isActive(true)
                 .build();
 
+        // Set competency if provided
+        if (request.getCompetencyId() != null && !request.getCompetencyId().isBlank()) {
+            InstrumentType competency = instrumentTypeRepository.findById(request.getCompetencyId())
+                    .orElseThrow(() -> new RuntimeException("Competency not found"));
+            user.setCompetency(competency);
+        }
+
         user = userRepository.save(user);
         return ResponseEntity.ok(user);
     }
@@ -73,6 +81,16 @@ public class UserController {
         if (updates.containsKey("phone")) user.setPhone((String) updates.get("phone"));
         if (updates.containsKey("jurisdictionId")) user.setJurisdictionId((String) updates.get("jurisdictionId"));
         if (updates.containsKey("isActive")) user.setIsActive((Boolean) updates.get("isActive"));
+        if (updates.containsKey("competencyId")) {
+            String competencyId = (String) updates.get("competencyId");
+            if (competencyId != null && !competencyId.isBlank()) {
+                InstrumentType competency = instrumentTypeRepository.findById(competencyId)
+                        .orElseThrow(() -> new RuntimeException("Competency not found"));
+                user.setCompetency(competency);
+            } else {
+                user.setCompetency(null);
+            }
+        }
 
         if (updates.containsKey("role")) {
             try {

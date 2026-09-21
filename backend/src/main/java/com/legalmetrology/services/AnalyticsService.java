@@ -101,24 +101,29 @@ public class AnalyticsService {
     private void buildLmoKPIs(User user, DashboardKPIs.DashboardKPIsBuilder builder) {
         List<com.legalmetrology.entities.Inspection> myInspections = inspectionRepository.findByInspectorId(user.getId());
 
-        long completed = myInspections.stream()
-                .filter(i -> i.getResult() == InspectionResult.PASS || i.getResult() == InspectionResult.FAIL)
+        List<com.legalmetrology.entities.Appointment> myAppointments = appointmentRepository.findByAssignmentAssigneeId(user.getId());
+        LocalDateTime now = LocalDateTime.now();
+        long completed = myAppointments.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
                 .count();
+        if (completed == 0) {
+            completed = myInspections.stream()
+                    .filter(i -> i.getResult() == InspectionResult.PASS || i.getResult() == InspectionResult.FAIL)
+                    .count();
+        }
         long failed = myInspections.stream()
                 .filter(i -> i.getResult() == InspectionResult.FAIL)
                 .count();
-        long pending = myInspections.stream()
-                .filter(i -> i.getResult() == InspectionResult.PENDING)
+        long pending = myAppointments.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
                 .count();
 
-        List<com.legalmetrology.entities.Appointment> myAppointments = appointmentRepository.findByAssignmentAssigneeId(user.getId());
-        LocalDateTime now = LocalDateTime.now();
         long todayInspections = myAppointments.stream()
-                .filter(a -> a.getScheduledAt().toLocalDate().equals(LocalDate.now()))
+                .filter(a -> a.getScheduledAt() != null && a.getScheduledAt().toLocalDate().equals(LocalDate.now()))
                 .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
                 .count();
         long overdue = myAppointments.stream()
-                .filter(a -> a.getScheduledAt().isBefore(now))
+                .filter(a -> a.getScheduledAt() != null && a.getScheduledAt().isBefore(now))
                 .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
                 .count();
 

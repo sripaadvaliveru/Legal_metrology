@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,7 +25,7 @@ public class EvidenceController {
     private String serverPort;
 
     @PostMapping("/upload")
-    @PreAuthorize("hasRole('LMO')")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, String>> uploadEvidence(
             @RequestParam("file") MultipartFile file) throws IOException {
 
@@ -33,7 +34,7 @@ public class EvidenceController {
         }
 
         String originalFilename = file.getOriginalFilename();
-        String extension = "";
+        String extension = ".jpg";
         if (originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
@@ -46,6 +47,43 @@ public class EvidenceController {
 
         Path filePath = uploadPath.resolve(filename);
         file.transferTo(filePath.toFile());
+
+        String url = "/uploads/" + filename;
+
+        return ResponseEntity.ok(Map.of("url", url, "filename", filename));
+    }
+
+    @PostMapping("/upload-base64")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadEvidenceBase64(
+            @RequestBody Map<String, String> payload) throws IOException {
+
+        String base64Data = payload.get("base64");
+        if (base64Data == null || base64Data.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "base64 data is required"));
+        }
+
+        String extension = ".jpg";
+        if (base64Data.contains("data:image/png;base64,")) {
+            extension = ".png";
+            base64Data = base64Data.replace("data:image/png;base64,", "");
+        } else if (base64Data.contains("data:image/jpeg;base64,")) {
+            extension = ".jpg";
+            base64Data = base64Data.replace("data:image/jpeg;base64,", "");
+        } else if (base64Data.contains(",")) {
+            base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+        }
+
+        byte[] decodedBytes = Base64.getDecoder().decode(base64Data.trim());
+
+        String filename = UUID.randomUUID().toString() + extension;
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(filename);
+        Files.write(filePath, decodedBytes);
 
         String url = "/uploads/" + filename;
 

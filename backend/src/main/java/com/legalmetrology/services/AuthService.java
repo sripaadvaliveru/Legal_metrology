@@ -44,7 +44,9 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId());
+                .jurisdiction(user.getJurisdictionId())
+                .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 
         if (user.getBusiness() != null) {
             responseBuilder.businessId(user.getBusiness().getId());
@@ -109,7 +111,9 @@ public class AuthService {
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .role(user.getRole());
+                .role(user.getRole())
+                .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 
         if (user.getBusiness() != null) {
             responseBuilder.businessId(user.getBusiness().getId());
@@ -128,7 +132,9 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId());
+                .jurisdiction(user.getJurisdictionId())
+                .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 
         if (user.getBusiness() != null) {
             responseBuilder.businessId(user.getBusiness().getId());

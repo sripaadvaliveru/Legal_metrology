@@ -30,13 +30,13 @@ INSERT INTO establishments (id, name, address, city, district, state, pincode, l
 ON CONFLICT (id) DO NOTHING;
 
 -- Test Users (DO UPDATE to fix password hashes across deployments)
-INSERT INTO users (id, name, email, password, role, phone, is_active, business_id, created_at, updated_at) VALUES
-('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'LMO', '9876543211', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'GATC', '9876543212', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'DISTRICT_OFFICER', '9876543213', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'STATE_OFFICER', '9876543214', true, NULL, NOW(), NOW()),
-('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'SUPER_ADMIN', '9876543215', true, NULL, NOW(), NOW())
+INSERT INTO users (id, name, email, password, role, phone, is_active, business_id, competency_id, created_at, updated_at) VALUES
+('a0000001-0000-0000-0000-000000000001', 'Rajesh Kumar', 'business@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'BUSINESS', '9876543210', true, 'd0000001-0000-0000-0000-000000000001', NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000002', 'Suresh Verma', 'lmo@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'LMO', '9876543211', true, NULL, 'b0000001-0000-0000-0000-000000000001', NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000003', 'GATC Test Center', 'gatc@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'GATC', '9876543212', true, NULL, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000004', 'Priya Sharma', 'district@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'DISTRICT_OFFICER', '9876543213', true, NULL, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000005', 'Amit Patel', 'state@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'STATE_OFFICER', '9876543214', true, NULL, NULL, NOW(), NOW()),
+('a0000001-0000-0000-0000-000000000006', 'Admin User', 'admin@test.com', '$2a$10$w/XWDSGyuOIczrfVCtufZeibm6iHfRAhjZRJqFyknkwJPR2ScT0te', 'SUPER_ADMIN', '9876543215', true, NULL, NULL, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     password = EXCLUDED.password,
     name = EXCLUDED.name,
@@ -44,6 +44,7 @@ ON CONFLICT (id) DO UPDATE SET
     phone = EXCLUDED.phone,
     is_active = EXCLUDED.is_active,
     business_id = EXCLUDED.business_id,
+    competency_id = EXCLUDED.competency_id,
     updated_at = NOW();
 
 -- Instruments

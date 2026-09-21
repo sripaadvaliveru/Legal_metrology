@@ -65,12 +65,14 @@ export type CertificateStatus = 'VALID' | 'EXPIRED' | 'REVOKED' | 'SUSPENDED';
 export interface Certificate {
   id: string;
   certificateNumber: string;
-  instrumentId: string;
-  inspectionId: string;
+  instrumentId?: string;
+  instrument?: Instrument;
+  inspectionId?: string;
   verificationDate: string;
   validUntil: string;
   status: CertificateStatus;
   qrToken: string;
+  issuedBy?: string;
 }
 
 export interface Notification {
