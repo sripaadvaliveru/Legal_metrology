@@ -3,9 +3,11 @@ package com.legalmetrology.services;
 import com.legalmetrology.dto.*;
 import com.legalmetrology.entities.Business;
 import com.legalmetrology.entities.Establishment;
+import com.legalmetrology.entities.Jurisdiction;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.Role;
 import com.legalmetrology.repositories.BusinessRepository;
+import com.legalmetrology.repositories.JurisdictionRepository;
 import com.legalmetrology.repositories.EstablishmentRepository;
 import com.legalmetrology.repositories.UserRepository;
 import com.legalmetrology.security.JwtTokenProvider;
@@ -26,6 +28,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
     private final EstablishmentRepository establishmentRepository;
+    private final JurisdictionRepository jurisdictionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public AuthResponse login(LoginRequest request) {
@@ -44,7 +47,9 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId())
+                .jurisdictionId(user.getJurisdictionId() != null ?
+                        jurisdictionRepository.findById(user.getJurisdictionId()).map(Jurisdiction::getName).orElse(null) : null)
+                .jurisdictionId(user.getJurisdictionId())
                 .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
                 .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 
@@ -112,6 +117,9 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .jurisdictionId(user.getJurisdictionId() != null ?
+                        jurisdictionRepository.findById(user.getJurisdictionId()).map(Jurisdiction::getName).orElse(null) : null)
+                .jurisdictionId(user.getJurisdictionId())
                 .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
                 .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 
@@ -132,7 +140,9 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .jurisdiction(user.getJurisdictionId())
+                .jurisdictionId(user.getJurisdictionId() != null ?
+                        jurisdictionRepository.findById(user.getJurisdictionId()).map(Jurisdiction::getName).orElse(null) : null)
+                .jurisdictionId(user.getJurisdictionId())
                 .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
                 .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
 

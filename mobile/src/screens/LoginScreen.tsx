@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { useAuth } from '../../App';
 
 export default function LoginScreen({ navigation }: any) {
@@ -7,7 +8,7 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const handleLogin = async () => {
     Keyboard.dismiss();

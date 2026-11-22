@@ -70,7 +70,7 @@ export default function NotificationsScreen({ navigation }: any) {
             <Ionicons name="checkmark-done-outline" size={18} color="#3b82f6" />
             <Text style={styles.markAllText}>Mark all as read</Text>
           </TouchableOpacity>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item }) => (
         <TouchableOpacity

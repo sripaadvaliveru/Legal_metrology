@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
-if (typeof globalThis.Buffer === 'undefined') {
-  globalThis.Buffer = Buffer;
+if (typeof (globalThis as { Buffer?: typeof Buffer }).Buffer === 'undefined') {
+  (globalThis as { Buffer?: typeof Buffer }).Buffer = Buffer;
 }
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';

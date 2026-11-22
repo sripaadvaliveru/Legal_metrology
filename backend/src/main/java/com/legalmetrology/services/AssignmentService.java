@@ -2,6 +2,7 @@ package com.legalmetrology.services;
 
 import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.ApplicationStatus;
+import com.legalmetrology.enums.ApplicationType;
 import com.legalmetrology.enums.AssignmentMethod;
 import com.legalmetrology.repositories.*;
 import lombok.RequiredArgsConstructor;

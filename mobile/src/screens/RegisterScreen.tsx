@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../services/api';
 
@@ -15,15 +16,15 @@ export default function RegisterScreen({ navigation }: any) {
   const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
 
-  const ownerNameRef = useRef<TextInput>(null);
-  const emailRef = useRef<TextInput>(null);
-  const mobileRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
-  const addressRef = useRef<TextInput>(null);
-  const stateRef = useRef<TextInput>(null);
-  const districtRef = useRef<TextInput>(null);
-  const cityRef = useRef<TextInput>(null);
-  const pincodeRef = useRef<TextInput>(null);
+  const ownerNameRef = useRef<TextInputInstance>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const mobileRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
+  const addressRef = useRef<TextInputInstance>(null);
+  const stateRef = useRef<TextInputInstance>(null);
+  const districtRef = useRef<TextInputInstance>(null);
+  const cityRef = useRef<TextInputInstance>(null);
+  const pincodeRef = useRef<TextInputInstance>(null);
 
   const registerMutation = useMutation({
     mutationFn: (data: any) => authApi.register(data),

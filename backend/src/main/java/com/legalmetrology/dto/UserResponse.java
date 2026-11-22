@@ -15,7 +15,8 @@ public class UserResponse {
     private String name;
     private String email;
     private Role role;
-    private String jurisdiction;
+    private String jurisdiction; // jurisdiction name
+    private String jurisdictionId; // jurisdiction ID
     private String businessId;
     private String businessName;
     private String competencyId;

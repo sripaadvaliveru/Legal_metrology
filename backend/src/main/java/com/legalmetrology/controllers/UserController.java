@@ -1,8 +1,13 @@
 package com.legalmetrology.controllers;
 
 import com.legalmetrology.dto.UserCreateRequest;
+import com.legalmetrology.dto.UserResponse;
+import com.legalmetrology.entities.InstrumentType;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.Role;
+import com.legalmetrology.entities.Jurisdiction;
+import com.legalmetrology.repositories.JurisdictionRepository;
+import com.legalmetrology.repositories.InstrumentTypeRepository;
 import com.legalmetrology.repositories.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -22,10 +29,11 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InstrumentTypeRepository instrumentTypeRepository;
+    private final JurisdictionRepository jurisdictionRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER')")
-    public ResponseEntity<List<User>> getUsersByRole(@RequestParam(required = false) String role) {
+    public ResponseEntity<List<UserResponse>> getUsersByRole(@RequestParam(required = false) String role) {
         List<User> users = userRepository.findAll().stream()
                 .filter(User::getIsActive)
                 .toList();
@@ -40,7 +48,40 @@ public class UserController {
             }
         }
 
-        return ResponseEntity.ok(users);
+        // Efficiently fetch jurisdiction names for all users
+        Set<String> jurisdictionIds = users.stream()
+                .map(User::getJurisdictionId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toSet());
+
+        List<Jurisdiction> jurisdictions = jurisdictionRepository.findAllById(jurisdictionIds);
+        Map<String, String> jurisdictionNameMap = jurisdictions.stream()
+                .collect(Collectors.toMap(Jurisdiction::getId, Jurisdiction::getName));
+
+        // Build UserResponse objects
+        List<UserResponse> userResponses = users.stream()
+                .map(user -> {
+                    UserResponse.UserResponseBuilder builder = UserResponse.builder()
+                            .id(user.getId())
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .role(user.getRole())
+                            .jurisdictionId(user.getJurisdictionId())
+                            .jurisdiction(user.getJurisdictionId() != null ?
+                                    jurisdictionNameMap.get(user.getJurisdictionId()) : null)
+                            .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                            .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
+
+                    if (user.getBusiness() != null) {
+                        builder.businessId(user.getBusiness().getId())
+                                .businessName(user.getBusiness().getName());
+                    }
+
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(userResponses);
     }
 
     @PostMapping
@@ -68,7 +109,25 @@ public class UserController {
         }
 
         user = userRepository.save(user);
-        return ResponseEntity.ok(user);
+
+        // Return UserResponse with jurisdiction and competency names
+        UserResponse.UserResponseBuilder responseBuilder = UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .jurisdictionId(user.getJurisdictionId())
+                .jurisdiction(user.getJurisdictionId() != null ?
+                        jurisdictionRepository.findById(user.getJurisdictionId()).map(Jurisdiction::getName).orElse(null) : null)
+                .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
+
+        if (user.getBusiness() != null) {
+            responseBuilder.businessId(user.getBusiness().getId())
+                    .businessName(user.getBusiness().getName());
+        }
+
+        return ResponseEntity.ok(responseBuilder.build());
     }
 
     @PutMapping("/{id}")
@@ -100,7 +159,25 @@ public class UserController {
         }
 
         user = userRepository.save(user);
-        return ResponseEntity.ok(user);
+
+        // Return UserResponse with jurisdiction and competency names
+        UserResponse.UserResponseBuilder responseBuilder = UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .jurisdictionId(user.getJurisdictionId())
+                .jurisdiction(user.getJurisdictionId() != null ?
+                        jurisdictionRepository.findById(user.getJurisdictionId()).map(Jurisdiction::getName).orElse(null) : null)
+                .competencyId(user.getCompetency() != null ? user.getCompetency().getId() : null)
+                .competencyName(user.getCompetency() != null ? user.getCompetency().getName() : null);
+
+        if (user.getBusiness() != null) {
+            responseBuilder.businessId(user.getBusiness().getId())
+                    .businessName(user.getBusiness().getName());
+        }
+
+        return ResponseEntity.ok(responseBuilder.build());
     }
 
     @DeleteMapping("/{id}")
