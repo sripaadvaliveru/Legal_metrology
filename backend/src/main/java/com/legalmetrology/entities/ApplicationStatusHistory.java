@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class ApplicationStatusHistory extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @JsonIgnore

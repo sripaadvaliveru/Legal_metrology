@@ -190,7 +190,9 @@ export default function ApplicationsReview() {
                 <tr className="bg-gray-50 border-t border-gray-100">
                   <td colSpan={5} className="px-6 py-5">
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-                      <DetailField label="Record ID" value={app.id} />
+                      {/* No separate "Record ID" row: the application's primary key IS its
+                          application number now (id == applicationNumber), so showing both
+                          would put two identical values side by side. */}
                       <DetailField label="Application #" value={app.applicationNumber} />
                       <DetailField label="Type" value={app.type?.replace(/_/g, ' ')} />
                       <DetailField label="Status" value={app.status?.replace(/_/g, ' ')} />

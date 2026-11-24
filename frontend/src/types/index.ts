@@ -140,6 +140,15 @@ export interface InstrumentType {
   validityMonths: number;
 }
 
+export interface Jurisdiction {
+  id: string;
+  name: string;
+  jurisdictionCode?: string;
+  level: 'STATE' | 'DISTRICT' | 'ZONE';
+  state?: string;
+  district?: string;
+}
+
 export interface ChecklistTemplate {
   id: string;
   instrumentType?: InstrumentType;

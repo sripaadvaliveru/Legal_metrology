@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 public class AuditLog extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @JsonIgnore

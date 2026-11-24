@@ -10,7 +10,6 @@ import lombok.*;
 public class Measurement extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @JsonIgnore

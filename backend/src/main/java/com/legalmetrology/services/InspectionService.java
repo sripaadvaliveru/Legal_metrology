@@ -10,7 +10,6 @@ import com.legalmetrology.enums.InstrumentStatus;
 import com.legalmetrology.repositories.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -35,22 +33,6 @@ public class InspectionService {
     private final ChecklistTemplateRepository checklistTemplateRepository;
     private final NotificationService notificationService;
     private final ApplicationStatusHistoryRepository statusHistoryRepository;
-
-    private final AtomicLong CERT_COUNTER = new AtomicLong(0);
-
-    @PostConstruct
-    public void init() {
-        long maxSeq = certificateRepository.findAll().stream()
-                .map(Certificate::getCertificateNumber)
-                .filter(id -> id != null && id.startsWith("CERT-LM-"))
-                .map(id -> {
-                    try { return Long.parseLong(id.substring(id.lastIndexOf('-') + 1)); }
-                    catch (Exception e) { return 0L; }
-                })
-                .mapToLong(Long::longValue)
-                .max().orElse(0L);
-        CERT_COUNTER.set(maxSeq + 1);
-    }
 
     @Transactional
     public Inspection createInspection(String appointmentId, String inspectorEmail) {
@@ -212,9 +194,7 @@ public class InspectionService {
         Application application = appointment.getApplication();
         Instrument instrument = application.getInstrument();
 
-        String certificateNumber = String.format("CERT-LM-%d-%06d",
-                LocalDate.now().getYear(),
-                CERT_COUNTER.getAndIncrement());
+        String certificateNumber = IdGenerator.next(Certificate.class);
 
         String qrToken = UUID.randomUUID().toString();
 
@@ -222,6 +202,7 @@ public class InspectionService {
         LocalDate validUntil = verificationDate.plusMonths(12);
 
         Certificate certificate = Certificate.builder()
+                .id(certificateNumber)
                 .certificateNumber(certificateNumber)
                 .instrument(instrument)
                 .inspection(inspection)

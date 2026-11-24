@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs, InstrumentType, ChecklistTemplate } from '@/types';
+import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs, InstrumentType, ChecklistTemplate, Jurisdiction } from '@/types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
@@ -144,6 +144,12 @@ export const userApi = {
 // Instrument Types
 export const instrumentTypeApi = {
   list: () => api.get<InstrumentType[]>('/instrument-types'),
+};
+
+// Jurisdictions (reference data — the admin UI offers these as a choice rather
+// than a free-text jurisdiction ID box)
+export const jurisdictionApi = {
+  list: () => api.get<Jurisdiction[]>('/jurisdictions'),
 };
 
 // Checklist Templates

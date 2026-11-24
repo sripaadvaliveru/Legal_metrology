@@ -9,7 +9,6 @@ import lombok.*;
 public class ChecklistTemplate extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

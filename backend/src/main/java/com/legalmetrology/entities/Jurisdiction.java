@@ -9,7 +9,6 @@ import lombok.*;
 public class Jurisdiction extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)

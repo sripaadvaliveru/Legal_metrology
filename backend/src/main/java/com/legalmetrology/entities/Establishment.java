@@ -16,7 +16,6 @@ import java.util.Set;
 public class Establishment extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)

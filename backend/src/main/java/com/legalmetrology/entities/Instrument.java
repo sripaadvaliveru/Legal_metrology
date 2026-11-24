@@ -16,7 +16,6 @@ import java.util.Set;
 public class Instrument extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "instrument_id", unique = true, nullable = false)

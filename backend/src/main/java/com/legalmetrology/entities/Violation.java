@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 public class Violation extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -17,7 +17,6 @@ import java.util.List;
 public class Inspection extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @OneToOne(fetch = FetchType.LAZY)

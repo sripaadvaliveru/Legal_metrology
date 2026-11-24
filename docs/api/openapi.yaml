@@ -466,7 +466,9 @@ components:
       properties:
         id:
           type: string
-          example: LM-INST-2026-000123
+          # Derived from the owning user, which is the only ID in the system built
+          # from another ID: <user id>-INST-<per-owner sequence>
+          example: USR-2026-01-INST-0001
         establishmentId: { type: string }
         type: { type: string }
         manufacturer: { type: string }

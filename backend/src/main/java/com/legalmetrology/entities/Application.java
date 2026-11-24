@@ -18,7 +18,6 @@ import java.util.Set;
 public class Application extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "application_number", unique = true, nullable = false)

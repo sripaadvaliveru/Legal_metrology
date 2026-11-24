@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userApi } from '@/services/api';
+import { userApi, jurisdictionApi } from '@/services/api';
 import { UserPlus, Search, Shield, ShieldOff, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Role } from '@/types';
@@ -29,6 +29,14 @@ export default function UserManagement() {
     // includeInactive is required here: without it the API hides deactivated users
     // entirely, making them impossible to reactivate from this screen.
     queryFn: () => userApi.list(filterRole || undefined, { includeInactive: true }).then(res => res.data),
+  });
+
+  // Jurisdictions must be picked, not typed: a hand-typed value can never match
+  // jurisdictions.id, which silently broke jurisdiction name display and
+  // auto-assignment matching for that officer.
+  const { data: jurisdictions = [] } = useQuery({
+    queryKey: ['jurisdictions'],
+    queryFn: () => jurisdictionApi.list().then(res => res.data),
   });
 
   const createMutation = useMutation({
@@ -307,12 +315,17 @@ export default function UserManagement() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Jurisdiction ID</label>
-                <input
-                  type="text" value={form.jurisdictionId} onChange={e => setForm({ ...form, jurisdictionId: e.target.value })}
+                <label className="block text-xs font-medium text-gray-700 mb-1">Jurisdiction</label>
+                <select
+                  value={form.jurisdictionId}
+                  onChange={e => setForm({ ...form, jurisdictionId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-gray-900"
-                  placeholder="e.g. JUR-DEL-001"
-                />
+                >
+                  <option value="">None</option>
+                  {jurisdictions.map(j => (
+                    <option key={j.id} value={j.id}>{j.name} ({j.id})</option>
+                  ))}
+                </select>
               </div>
             </div>
 

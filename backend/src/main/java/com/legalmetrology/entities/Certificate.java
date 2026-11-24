@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 public class Certificate extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "certificate_number", unique = true, nullable = false)

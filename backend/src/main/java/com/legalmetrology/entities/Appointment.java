@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 public class Appointment extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @JsonIgnoreProperties({"appointment", "statusHistory", "assignments"})

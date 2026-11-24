@@ -10,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.PostConstruct;
-import java.time.Year;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -28,22 +25,6 @@ public class ApplicationService {
     private final AssignmentService assignmentService;
     private final NotificationService notificationService;
 
-    private final AtomicLong APP_COUNTER = new AtomicLong(0);
-
-    @PostConstruct
-    public void init() {
-        long maxSeq = applicationRepository.findAll().stream()
-                .map(Application::getApplicationNumber)
-                .filter(id -> id != null && id.startsWith("APP-"))
-                .map(id -> {
-                    try { return Long.parseLong(id.substring(id.lastIndexOf('-') + 1)); }
-                    catch (Exception e) { return 0L; }
-                })
-                .mapToLong(Long::longValue)
-                .max().orElse(0L);
-        APP_COUNTER.set(maxSeq + 1);
-    }
-
     @Transactional
     public Application createApplication(ApplicationCreateRequest request, String userEmail) {
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
@@ -52,10 +33,11 @@ public class ApplicationService {
         User applicant = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String applicationNumber = String.format("APP-%d-%06d",
-                Year.now().getValue(), APP_COUNTER.getAndIncrement());
+        // The application number IS the primary key — one identifier instead of two.
+        String applicationNumber = IdGenerator.next(Application.class);
 
         Application application = Application.builder()
+                .id(applicationNumber)
                 .applicationNumber(applicationNumber)
                 .instrument(instrument)
                 .applicant(applicant)

@@ -93,9 +93,7 @@ public class CertificateService {
             throw new RuntimeException("Instrument not found for inspection");
         }
 
-        String certificateNumber = String.format("CERT-LM-%d-%06d",
-                LocalDate.now().getYear(),
-                certificateRepository.count() + 1);
+        String certificateNumber = IdGenerator.next(Certificate.class);
 
         String qrToken = UUID.randomUUID().toString();
 
@@ -103,6 +101,7 @@ public class CertificateService {
         LocalDate validUntil = verificationDate.plusMonths(12);
 
         Certificate certificate = Certificate.builder()
+                .id(certificateNumber)
                 .certificateNumber(certificateNumber)
                 .instrument(instrument)
                 .inspection(inspection)

@@ -10,7 +10,6 @@ import lombok.*;
 public class VerificationRule extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @JsonIgnore

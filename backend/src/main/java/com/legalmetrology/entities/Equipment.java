@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 public class Equipment extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "equipment_id", unique = true, nullable = false)
