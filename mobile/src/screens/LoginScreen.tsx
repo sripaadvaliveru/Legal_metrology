@@ -7,8 +7,9 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, selectedRole, clearRole } = useAuth();
   const passwordRef = useRef<TextInputInstance>(null);
+  const isLmo = selectedRole === 'LMO';
 
   const handleLogin = async () => {
     Keyboard.dismiss();
@@ -27,7 +28,17 @@ export default function LoginScreen({ navigation }: any) {
     try {
       await login(email, password);
     } catch (err: any) {
-      Alert.alert('Login Failed', err.response?.data?.error || 'Invalid credentials');
+      if (err?.code === 'ROLE_MISMATCH') {
+        Alert.alert(
+          'Wrong account type',
+          isLmo
+            ? 'This is not an LMO account. Please use LMO credentials, or switch the account type.'
+            : 'This is not a Business account. Please use Business credentials, or switch the account type.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Login Failed', err.response?.data?.error || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
     }
@@ -37,8 +48,8 @@ export default function LoginScreen({ navigation }: any) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.container}>
         <View style={styles.card}>
-            <Text style={styles.title}>Legal Metrology</Text>
-            <Text style={styles.subtitle}>Verification System</Text>
+            <Text style={styles.title}>{isLmo ? 'Officer Login' : 'Business Login'}</Text>
+            <Text style={styles.subtitle}>Legal Metrology Verification System</Text>
 
             <TextInput
               style={styles.input}
@@ -74,8 +85,14 @@ export default function LoginScreen({ navigation }: any) {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Register')} style={styles.linkBtn}>
-              <Text style={styles.linkText}>Don't have an account? Register</Text>
+            {!isLmo && (
+              <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Register')} style={styles.linkBtn}>
+                <Text style={styles.linkText}>Don't have an account? Register</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity activeOpacity={0.7} onPress={() => clearRole()} style={styles.switchBtn}>
+              <Text style={styles.switchText}>Switch account type</Text>
             </TouchableOpacity>
         </View>
       </View>
@@ -93,4 +110,6 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   linkBtn: { marginTop: 16, alignItems: 'center' },
   linkText: { fontSize: 14, color: '#3b82f6', fontWeight: '500' },
+  switchBtn: { marginTop: 14, alignItems: 'center' },
+  switchText: { fontSize: 13, color: '#6b7280' },
 });

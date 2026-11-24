@@ -60,15 +60,19 @@ const LmoTab = createBottomTabNavigator();
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  selectedRole: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  clearRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
+  selectedRole: null,
   login: async () => {},
   logout: () => {},
+  clearRole: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -280,9 +284,16 @@ function AppContent() {
         setRoleChecked(true);
 
         if (storedToken && storedUser) {
-          setToken(storedToken);
           try {
-            setUser(JSON.parse(storedUser));
+            const storedUserData: User = JSON.parse(storedUser);
+            // A session only belongs to the account type chosen at entry.
+            if (storedRole && storedUserData.role !== storedRole) {
+              await AsyncStorage.removeItem('auth_token');
+              await AsyncStorage.removeItem('user');
+            } else {
+              setToken(storedToken);
+              setUser(storedUserData);
+            }
           } catch {
             await AsyncStorage.removeItem('auth_token');
             await AsyncStorage.removeItem('user');
@@ -301,6 +312,14 @@ function AppContent() {
   const login = async (email: string, password: string) => {
     const res = await authApi.login(email, password);
     const { token: newToken, user: userData } = res.data;
+
+    // Only the account type chosen at app entry may sign in on this path.
+    if (selectedRole && userData.role !== selectedRole) {
+      const err = new Error('Role mismatch') as Error & { code?: string };
+      err.code = 'ROLE_MISMATCH';
+      throw err; // nothing persisted — no token/user stored
+    }
+
     setToken(newToken);
     setUser(userData);
     await AsyncStorage.setItem('auth_token', newToken);
@@ -312,6 +331,16 @@ function AppContent() {
     setUser(null);
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('user');
+  };
+
+  // Return to the Business / LMO chooser (used by "Switch account type").
+  const clearRole = async () => {
+    setToken(null);
+    setUser(null);
+    setSelectedRole(null);
+    await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem('selectedRole');
   };
 
   const handleRoleSelect = async (role: string) => {
@@ -329,7 +358,7 @@ function AppContent() {
   const isLmo = user?.role === 'LMO' || user?.role === 'GATC' || user?.role === 'DISTRICT_OFFICER' || user?.role === 'STATE_OFFICER' || user?.role === 'SUPER_ADMIN';
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, selectedRole, login, logout, clearRole }}>
       <OfflineBanner />
       <NavigationContainer>
         {!user ? (

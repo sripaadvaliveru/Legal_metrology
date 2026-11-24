@@ -1,10 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import type { TextInputInstance } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../services/api';
+import { useAuth } from '../../App';
 
 export default function RegisterScreen({ navigation }: any) {
+  const { selectedRole } = useAuth();
+
+  // Registration is a Business-only action. The LMO login hides the link;
+  // this guard covers any other navigation path.
+  useEffect(() => {
+    if (selectedRole !== null && selectedRole !== 'BUSINESS') {
+      navigation.goBack();
+    }
+  }, [selectedRole, navigation]);
+
   const [businessName, setBusinessName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
