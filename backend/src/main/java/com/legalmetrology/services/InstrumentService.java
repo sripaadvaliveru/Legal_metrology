@@ -6,6 +6,7 @@ import com.legalmetrology.entities.Instrument;
 import com.legalmetrology.entities.InstrumentType;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.InstrumentStatus;
+import com.legalmetrology.enums.Role;
 import com.legalmetrology.repositories.EstablishmentRepository;
 import com.legalmetrology.repositories.InstrumentRepository;
 import com.legalmetrology.repositories.InstrumentTypeRepository;
@@ -38,8 +39,10 @@ public class InstrumentService {
         // Instrument IDs are the one ID in the system derived from another: the owner's user ID
         // plus a per-owner extension -> USR-2026-01-INST-0001. The controller passes the
         // authenticated principal's email, which is the only ownership handle available here.
-        User owner = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User owner = requireCaller(userEmail);
+        // A business may only register instruments into its own establishments. Without this,
+        // one tenant could inject instruments into another tenant's dashboard.
+        assertEstablishmentOwnedBy(establishment, owner);
         String instrumentId = IdGenerator.nextInstrument(owner.getId());
 
         Instrument instrument = Instrument.builder()
@@ -77,18 +80,36 @@ public class InstrumentService {
                 .orElseThrow(() -> new RuntimeException("Instrument not found"));
     }
 
+    /**
+     * Read an instrument on behalf of an authenticated principal. LMO / GATC / officers and
+     * admins legitimately see every instrument, so only BUSINESS callers are tenant-scoped.
+     */
+    @Transactional(readOnly = true)
+    public Instrument getInstrumentForCaller(String id, String callerEmail) {
+        Instrument instrument = getInstrumentById(id);
+        User caller = requireCaller(callerEmail);
+        if (caller.getRole() == Role.BUSINESS) {
+            assertInstrumentOwnedBy(instrument, caller);
+        }
+        return instrument;
+    }
+
     public Instrument getInstrumentByInstrumentId(String instrumentId) {
         return instrumentRepository.findByInstrumentId(instrumentId)
                 .orElseThrow(() -> new RuntimeException("Instrument not found"));
     }
 
-    public Instrument updateInstrument(String id, InstrumentCreateRequest request) {
+    public Instrument updateInstrument(String id, InstrumentCreateRequest request, String callerEmail) {
         Instrument instrument = getInstrumentById(id);
+        User caller = requireCaller(callerEmail);
+        assertInstrumentOwnedBy(instrument, caller);
         InstrumentType type = instrumentTypeRepository.findById(request.getType())
                 .orElseGet(() -> instrumentTypeRepository.findByName(request.getType())
                         .orElseThrow(() -> new RuntimeException("Instrument type not found")));
         Establishment establishment = establishmentRepository.findById(request.getEstablishmentId())
                 .orElseThrow(() -> new RuntimeException("Establishment not found"));
+        // An edit must not be able to hand the instrument to another business's establishment.
+        assertEstablishmentOwnedBy(establishment, caller);
         instrument.setInstrumentType(type);
         instrument.setManufacturer(request.getManufacturer());
         instrument.setModel(request.getModel());
@@ -102,8 +123,38 @@ public class InstrumentService {
         return instrumentRepository.save(instrument);
     }
 
-    public void deleteInstrument(String id) {
+    public void deleteInstrument(String id, String callerEmail) {
         Instrument instrument = getInstrumentById(id);
+        assertInstrumentOwnedBy(instrument, requireCaller(callerEmail));
         instrumentRepository.delete(instrument);
+    }
+
+    private User requireCaller(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
+     * Both assertions throw the exact error already used for a missing ID, so a cross-tenant
+     * probe is indistinguishable from asking for an ID that does not exist.
+     */
+    private void assertInstrumentOwnedBy(Instrument instrument, User caller) {
+        boolean owned = caller.getBusiness() != null
+                && instrument.getEstablishment() != null
+                && instrument.getEstablishment().getBusiness() != null
+                && caller.getBusiness().getId().equals(instrument.getEstablishment().getBusiness().getId());
+        if (!owned) {
+            throw new RuntimeException("Instrument not found");
+        }
+    }
+
+    private void assertEstablishmentOwnedBy(Establishment establishment, User caller) {
+        boolean owned = caller.getBusiness() != null
+                && establishment != null
+                && establishment.getBusiness() != null
+                && caller.getBusiness().getId().equals(establishment.getBusiness().getId());
+        if (!owned) {
+            throw new RuntimeException("Establishment not found");
+        }
     }
 }

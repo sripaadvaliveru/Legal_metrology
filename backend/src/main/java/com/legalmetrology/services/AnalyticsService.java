@@ -2,6 +2,11 @@ package com.legalmetrology.services;
 
 import com.legalmetrology.dto.DashboardKPIs;
 import com.legalmetrology.dto.DashboardKPIs.RecentActivity;
+import com.legalmetrology.entities.Business;
+import com.legalmetrology.entities.Certificate;
+import com.legalmetrology.entities.Establishment;
+import com.legalmetrology.entities.Inspection;
+import com.legalmetrology.entities.Instrument;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.*;
 import com.legalmetrology.repositories.*;
@@ -26,6 +31,7 @@ public class AnalyticsService {
     private final AssignmentRepository assignmentRepository;
     private final AppointmentRepository appointmentRepository;
     private final BusinessRepository businessRepository;
+    private final EstablishmentRepository establishmentRepository;
     private final UserRepository userRepository;
 
     public DashboardKPIs getDashboardKPIs(User user) {
@@ -41,13 +47,39 @@ public class AnalyticsService {
         return builder.build();
     }
 
+    /**
+     * Every figure on the business dashboard is scoped to the caller's own business.
+     * Instruments are owned by establishments, which are owned by businesses, so the
+     * ownership chain is user -&gt; business -&gt; establishment -&gt; instrument. This resolves
+     * the same way GET /api/instruments/my does, so the counts and the instrument list
+     * can never disagree. A user with no business sees zeros, never another tenant's data.
+     */
     private void buildBusinessKPIs(User user, DashboardKPIs.DashboardKPIsBuilder builder) {
-        long totalInstruments = instrumentRepository.count();
-        long verifiedInstruments = instrumentRepository.findByStatus(InstrumentStatus.VERIFIED, null).getTotalElements();
-        long expiredInstruments = instrumentRepository.findByStatus(InstrumentStatus.EXPIRED, null).getTotalElements();
+        Business business = user.getBusiness();
 
-        List<com.legalmetrology.entities.Application> allApps = applicationRepository.findAll();
-        long pendingApps = allApps.stream()
+        List<Instrument> myInstruments = new ArrayList<>();
+        List<com.legalmetrology.entities.Application> myApps = List.of();
+        List<Certificate> myCertificates = List.of();
+        List<Inspection> myInspections = List.of();
+
+        if (business != null) {
+            for (Establishment establishment : establishmentRepository.findByBusinessId(business.getId())) {
+                myInstruments.addAll(instrumentRepository.findByEstablishmentId(establishment.getId()));
+            }
+            myApps = applicationRepository.findByApplicantId(user.getId());
+            myCertificates = certificateRepository.findByBusinessId(business.getId());
+            myInspections = inspectionRepository.findByBusinessId(business.getId());
+        }
+
+        long totalInstruments = myInstruments.size();
+        long verifiedInstruments = myInstruments.stream()
+                .filter(i -> i.getStatus() == InstrumentStatus.VERIFIED)
+                .count();
+        long expiredInstruments = myInstruments.stream()
+                .filter(i -> i.getStatus() == InstrumentStatus.EXPIRED)
+                .count();
+
+        long pendingApps = myApps.stream()
                 .filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED
                         || a.getStatus() == ApplicationStatus.UNDER_REVIEW
                         || a.getStatus() == ApplicationStatus.ASSIGNMENT_PENDING
@@ -57,11 +89,14 @@ public class AnalyticsService {
 
         LocalDate today = LocalDate.now();
         LocalDate oneMonthFromNow = today.plusMonths(1);
-        long expiringSoon = certificateRepository.findByStatus(CertificateStatus.VALID).stream()
+        long expiringSoon = myCertificates.stream()
+                .filter(c -> c.getStatus() == CertificateStatus.VALID)
                 .filter(c -> c.getValidUntil().isAfter(today) && c.getValidUntil().isBefore(oneMonthFromNow))
                 .count();
 
-        long failedInspections = inspectionRepository.findByResult(InspectionResult.FAIL).size();
+        long failedInspections = myInspections.stream()
+                .filter(i -> i.getResult() == InspectionResult.FAIL)
+                .count();
 
         double compliance = totalInstruments > 0 ? (verifiedInstruments * 100.0 / totalInstruments) : 0;
 
@@ -74,7 +109,7 @@ public class AnalyticsService {
                 .compliancePercentage(Math.round(compliance * 100.0) / 100.0);
 
         List<RecentActivity> activities = new ArrayList<>();
-        allApps.stream()
+        myApps.stream()
                 .sorted((a, b) -> {
                     LocalDateTime aTime = a.getUpdatedAt() != null ? a.getUpdatedAt() : a.getCreatedAt();
                     LocalDateTime bTime = b.getUpdatedAt() != null ? b.getUpdatedAt() : b.getCreatedAt();

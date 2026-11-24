@@ -37,7 +37,7 @@ public class InstrumentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<Page<Instrument>> getInstruments(Pageable pageable) {
         return ResponseEntity.ok(instrumentService.getInstruments(pageable));
     }
@@ -62,22 +62,23 @@ public class InstrumentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<Instrument> getInstrument(@PathVariable String id) {
-        return ResponseEntity.ok(instrumentService.getInstrumentById(id));
+    public ResponseEntity<Instrument> getInstrument(@PathVariable String id, Authentication authentication) {
+        return ResponseEntity.ok(instrumentService.getInstrumentForCaller(id, authentication.getName()));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<Instrument> updateInstrument(
             @PathVariable String id,
-            @Valid @RequestBody InstrumentCreateRequest request) {
-        return ResponseEntity.ok(instrumentService.updateInstrument(id, request));
+            @Valid @RequestBody InstrumentCreateRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(instrumentService.updateInstrument(id, request, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('BUSINESS')")
-    public ResponseEntity<Void> deleteInstrument(@PathVariable String id) {
-        instrumentService.deleteInstrument(id);
+    public ResponseEntity<Void> deleteInstrument(@PathVariable String id, Authentication authentication) {
+        instrumentService.deleteInstrument(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }
