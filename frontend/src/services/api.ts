@@ -123,7 +123,16 @@ export const analyticsApi = {
 
 // Users (admin)
 export const userApi = {
-  list: (role?: string) => api.get<User[]>('/users', { params: role ? { role } : {} }),
+  // includeInactive defaults to false on the server, so callers that must only ever
+  // see active users (assignment/scheduling pickers) can keep calling listByRole/list()
+  // with no options and stay safe.
+  list: (role?: string, opts?: { includeInactive?: boolean }) =>
+    api.get<User[]>('/users', {
+      params: {
+        ...(role ? { role } : {}),
+        ...(opts?.includeInactive ? { includeInactive: true } : {}),
+      },
+    }),
   listByRole: (role: string) => api.get<User[]>(`/users?role=${role}`),
   create: (data: { name: string; email: string; password: string; role: string; phone?: string; jurisdictionId?: string }) =>
     api.post<User>('/users', data),

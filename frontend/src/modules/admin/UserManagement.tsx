@@ -20,12 +20,15 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [filterRole, setFilterRole] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'LMO' as Role, phone: '', jurisdictionId: '' });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users', filterRole],
-    queryFn: () => userApi.list(filterRole || undefined).then(res => res.data),
+    // includeInactive is required here: without it the API hides deactivated users
+    // entirely, making them impossible to reactivate from this screen.
+    queryFn: () => userApi.list(filterRole || undefined, { includeInactive: true }).then(res => res.data),
   });
 
   const createMutation = useMutation({
@@ -44,35 +47,56 @@ export default function UserManagement() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => userApi.delete(id),
     onSuccess: () => {
-      toast.success('User deactivated');
+      toast.success('User permanently deleted');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
-    onError: () => toast.error('Failed to deactivate user'),
+    onError: (err: any) => {
+      // The backend returns 409 with a readable reason when the account still owns
+      // applications/assignments/inspections, and 400 for self-delete / last-admin.
+      toast.error(err.response?.data?.error || 'Failed to delete user');
+    },
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => userApi.update(id, { isActive }),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
+      toast.success(vars.isActive ? 'User activated' : 'User deactivated');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to update user status');
     },
   });
 
-  const filtered = users.filter(u =>
-    u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users.filter(u => {
+    const active = u.isActive !== false;
+    if (statusFilter === 'active' && !active) return false;
+    if (statusFilter === 'inactive' && active) return false;
+    return (
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const roleCounts = users.reduce((acc, u) => {
     acc[u.role] = (acc[u.role] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
+  const inactiveCount = users.filter(u => u.isActive === false).length;
+
+  const STATUS_TABS = [
+    { value: 'all', label: `All (${users.length})` },
+    { value: 'active', label: `Active (${users.length - inactiveCount})` },
+    { value: 'inactive', label: `Inactive (${inactiveCount})` },
+  ] as const;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Create and manage officer accounts</p>
+          <p className="text-sm text-gray-500 mt-1">Create, activate and deactivate officer accounts</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -99,16 +123,33 @@ export default function UserManagement() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
-        />
+      {/* Search + status filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
+          />
+        </div>
+        <div className="flex rounded-lg border border-gray-300 overflow-hidden self-start">
+          {STATUS_TABS.map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => setStatusFilter(tab.value)}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                statusFilter === tab.value
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* User table */}
@@ -127,16 +168,26 @@ export default function UserManagement() {
             {isLoading ? (
               <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No users found</td></tr>
-            ) : filtered.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50">
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  {statusFilter === 'inactive'
+                    ? 'No deactivated users — everyone is active'
+                    : 'No users found'}
+                </td>
+              </tr>
+            ) : filtered.map(u => {
+              const active = u.isActive !== false;
+              return (
+              <tr key={u.id} className={`hover:bg-gray-50 ${active ? '' : 'bg-red-50/50'}`}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      active ? 'bg-gray-200 text-gray-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
                       {u.name?.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
+                      <p className={`text-sm font-medium ${active ? 'text-gray-900' : 'text-gray-500'}`}>{u.name}</p>
                       <p className="text-xs text-gray-500">{u.email}</p>
                     </div>
                   </div>
@@ -148,42 +199,56 @@ export default function UserManagement() {
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600">{u.phone || '—'}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                    (u as any).isActive !== false ? 'text-green-700' : 'text-red-700'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${(u as any).isActive !== false ? 'bg-green-500' : 'bg-red-500'}`} />
-                    {(u as any).isActive !== false ? 'Active' : 'Inactive'}
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${active ? 'text-green-700' : 'text-red-700'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-green-500' : 'bg-red-500'}`} />
+                    {active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
                     <button
-                      onClick={() => toggleActiveMutation.mutate({
-                        id: u.id,
-                        isActive: (u as any).isActive === false
-                      })}
-                      className="p-1.5 rounded hover:bg-gray-100"
-                      title={(u as any).isActive === false ? 'Activate' : 'Deactivate'}
+                      onClick={() => {
+                        const nextActive = !active;
+                        if (confirm(`${nextActive ? 'Reactivate' : 'Deactivate'} ${u.name}?`)) {
+                          toggleActiveMutation.mutate({ id: u.id, isActive: nextActive });
+                        }
+                      }}
+                      disabled={toggleActiveMutation.isPending}
+                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-50"
+                      title={active ? 'Deactivate' : 'Reactivate'}
                     >
-                      {(u as any).isActive === false ? (
-                        <Shield className="w-4 h-4 text-green-600" />
-                      ) : (
+                      {active ? (
                         <ShieldOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Shield className="w-4 h-4 text-green-600" />
                       )}
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Deactivate ${u.name}?`)) deleteMutation.mutate(u.id);
+                        const typed = prompt(
+                          `Permanently delete ${u.email}?\n\n` +
+                          'This removes the account for good and cannot be undone. ' +
+                          'Accounts that still own applications, assignments or inspections are blocked.\n\n' +
+                          'Type the email address to confirm:'
+                        );
+                        if (typed === null) return;
+                        if (typed.trim().toLowerCase() !== (u.email || '').toLowerCase()) {
+                          toast.error('Email did not match — deletion cancelled');
+                          return;
+                        }
+                        deleteMutation.mutate(u.id);
                       }}
-                      className="p-1.5 rounded hover:bg-gray-100"
-                      title="Deactivate"
+                      disabled={deleteMutation.isPending}
+                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-50"
+                      title="Permanently delete"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

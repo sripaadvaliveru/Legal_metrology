@@ -45,7 +45,10 @@ ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     role = EXCLUDED.role,
     phone = EXCLUDED.phone,
-    is_active = EXCLUDED.is_active,
+    -- is_active intentionally NOT reset here: this script runs on every startup
+    -- (spring.sql.init.mode=always), so overwriting it would silently re-enable
+    -- accounts an admin has deliberately deactivated. It still defaults to true
+    -- on first insert, and the DO UPDATE keeps passwords/names in sync.
     business_id = EXCLUDED.business_id,
     jurisdiction_id = EXCLUDED.jurisdiction_id,
     competency_id = EXCLUDED.competency_id,

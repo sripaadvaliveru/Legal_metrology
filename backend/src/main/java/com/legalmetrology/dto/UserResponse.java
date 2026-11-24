@@ -21,4 +21,5 @@ public class UserResponse {
     private String businessName;
     private String competencyId;
     private String competencyName;
+    private Boolean isActive;
 }

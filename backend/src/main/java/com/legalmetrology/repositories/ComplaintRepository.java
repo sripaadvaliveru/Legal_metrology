@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, String> {
+    long countByUserId(String userId);
 }
