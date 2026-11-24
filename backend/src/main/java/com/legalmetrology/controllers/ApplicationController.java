@@ -10,7 +10,7 @@ import com.legalmetrology.entities.ApplicationStatusHistory;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.ApplicationType;
-import com.legalmetrology.repositories.UserRepository;
+import com.legalmetrology.repositories.JurisdictionRepository;
 import com.legalmetrology.services.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
-    private final UserRepository userRepository;
+    private final JurisdictionRepository jurisdictionRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS')")
@@ -165,8 +165,10 @@ private ApplicationResponse applicationToResponse(Application application) {
                 // Add assignee jurisdiction details if available
                 if (assignee.getJurisdictionId() != null) {
                     responseBuilder.assigneeJurisdictionId(assignee.getJurisdictionId());
-                    // Look up jurisdiction name
-                    userRepository.findById(assignee.getJurisdictionId()).ifPresent(jurisdiction ->
+                    // Look up the jurisdiction NAME for the assignee's jurisdictionId.
+                    // (Was wrongly using UserRepository here, which looks up users.id —
+                    // a jurisdiction id never matches a user, so this silently produced null.)
+                    jurisdictionRepository.findById(assignee.getJurisdictionId()).ifPresent(jurisdiction ->
                             responseBuilder.assigneeJurisdiction(jurisdiction.getName()));
                 }
 

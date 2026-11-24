@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { applicationApi } from '@/services/api';
 import { CheckCircle, XCircle, Eye, Loader2, ArrowRight } from 'lucide-react';
@@ -6,6 +6,22 @@ import toast from 'react-hot-toast';
 import type { Application } from '@/types';
 
 const STATUS_FILTERS = ['All', 'SUBMITTED', 'APPROVED', 'ASSIGNED', 'SCHEDULED'] as const;
+
+/** One label/value pair inside the expanded application detail panel. */
+const DetailField = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) => (
+  <div className="min-w-0">
+    <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+    <p className="text-sm text-gray-900 mt-1 break-words">{value ?? '—'}</p>
+  </div>
+);
+
+const fmtDateTime = (v?: string) => (v ? new Date(v).toLocaleString() : undefined);
 
 export default function ApplicationsReview() {
   const queryClient = useQueryClient();
@@ -102,8 +118,11 @@ export default function ApplicationsReview() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filtered?.map((app: Application) => (
-              <tr key={app.id} className="hover:bg-gray-50">
+            {filtered?.map((app: Application) => {
+              const isExpanded = expandedId === app.id;
+              return (
+              <Fragment key={app.id}>
+              <tr className="hover:bg-gray-50">
                 <td className="px-6 py-4">
                   <span className="text-sm font-medium text-gray-900">{app.applicationNumber}</span>
                 </td>
@@ -123,9 +142,15 @@ export default function ApplicationsReview() {
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
-                      className="p-1 text-gray-400 hover:text-gray-600"
-                      title="View details"
+                      onClick={() => setExpandedId(isExpanded ? null : app.id)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? 'Hide application details' : 'View application details'}
+                      className={`p-1 rounded transition-colors ${
+                        isExpanded
+                          ? 'text-gray-900 bg-gray-100'
+                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                      }`}
+                      title={isExpanded ? 'Hide details' : 'View details'}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -158,7 +183,55 @@ export default function ApplicationsReview() {
                   </div>
                 </td>
               </tr>
-            ))}
+
+              {/* Expanded detail panel — this is what the eye button was always
+                  meant to reveal. Purely local UI state, no extra API call. */}
+              {isExpanded && (
+                <tr className="bg-gray-50 border-t border-gray-100">
+                  <td colSpan={5} className="px-6 py-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                      <DetailField label="Record ID" value={app.id} />
+                      <DetailField label="Application #" value={app.applicationNumber} />
+                      <DetailField label="Type" value={app.type?.replace(/_/g, ' ')} />
+                      <DetailField label="Status" value={app.status?.replace(/_/g, ' ')} />
+                      <DetailField label="Submitted" value={fmtDateTime(app.submittedAt)} />
+                      <DetailField label="Created" value={fmtDateTime(app.createdAt)} />
+                      <DetailField label="Updated" value={fmtDateTime(app.updatedAt)} />
+
+                      <DetailField label="Applicant" value={app.applicantName} />
+                      <DetailField label="Applicant Email" value={app.applicantEmail} />
+                      <DetailField label="Applicant ID" value={app.applicantId} />
+
+                      <DetailField label="Instrument" value={app.instrumentName} />
+                      <DetailField label="Instrument ID" value={app.instrumentId} />
+
+                      <DetailField label="Assigned To" value={app.assigneeName} />
+                      <DetailField label="Assignee Email" value={app.assigneeEmail} />
+                      <DetailField label="Assignee ID" value={app.assigneeId} />
+                      <DetailField label="Jurisdiction" value={app.assigneeJurisdiction} />
+                      <DetailField label="Jurisdiction ID" value={app.assigneeJurisdictionId} />
+                      <DetailField label="Competency" value={app.assigneeCompetency} />
+                      <DetailField label="Competency ID" value={app.assigneeCompetencyId} />
+                      <DetailField label="Assignment Method" value={app.assignmentMethod?.replace(/_/g, ' ')} />
+                      <DetailField
+                        label="Assignment Score"
+                        value={app.assignmentScore != null ? app.assignmentScore.toFixed(2) : null}
+                      />
+                      <DetailField label="Assigned At" value={fmtDateTime(app.assignedAt)} />
+                      <DetailField label="Assignment ID" value={app.assignmentId} />
+                    </div>
+
+                    {!app.assigneeName && (
+                      <p className="mt-4 text-xs text-gray-500">
+                        Not yet assigned — approve this application to send it to the assignment panel.
+                      </p>
+                    )}
+                  </td>
+                </tr>
+              )}
+              </Fragment>
+              );
+            })}
             {filtered?.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">

@@ -46,6 +46,26 @@ export interface Application {
   type: ApplicationType;
   status: ApplicationStatus;
   submittedAt?: string;
+  // Extended detail returned by GET /api/applications/all (23 fields total).
+  // The table only renders the four above; the rest surface in the expanded
+  // detail panel opened by the "View details" eye button.
+  instrumentName?: string;
+  applicantId?: string;
+  applicantName?: string;
+  applicantEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  assignmentId?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  assigneeEmail?: string;
+  assigneeJurisdiction?: string;
+  assigneeJurisdictionId?: string;
+  assigneeCompetency?: string;
+  assigneeCompetencyId?: string;
+  assignmentScore?: number;
+  assignmentMethod?: string;
+  assignedAt?: string;
 }
 
 export interface Assignment {
