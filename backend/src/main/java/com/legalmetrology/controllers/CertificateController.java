@@ -28,14 +28,16 @@ public class CertificateController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<Certificate> getCertificate(@PathVariable String id) {
-        return ResponseEntity.ok(certificateService.getCertificateById(id));
+    public ResponseEntity<Certificate> getCertificate(@PathVariable String id, Authentication authentication) {
+        return ResponseEntity.ok(certificateService.getCertificateForCaller(id, authentication.getName()));
     }
 
     @GetMapping("/by-number/{number}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<Certificate> getCertificateByNumber(@PathVariable String number) {
-        return ResponseEntity.ok(certificateService.getCertificateByNumber(number));
+    public ResponseEntity<Certificate> getCertificateByNumber(
+            @PathVariable String number,
+            Authentication authentication) {
+        return ResponseEntity.ok(certificateService.getCertificateByNumberForCaller(number, authentication.getName()));
     }
 
     @GetMapping("/my")
@@ -54,8 +56,8 @@ public class CertificateController {
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<byte[]> getCertificatePdf(@PathVariable String id) {
-        Certificate cert = certificateService.getCertificateById(id);
+    public ResponseEntity<byte[]> getCertificatePdf(@PathVariable String id, Authentication authentication) {
+        Certificate cert = certificateService.getCertificateForCaller(id, authentication.getName());
         byte[] pdfBytes = certificateService.generateCertificatePdf(id);
 
         return ResponseEntity.ok()
@@ -68,8 +70,9 @@ public class CertificateController {
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
     public ResponseEntity<byte[]> getCertificateQrCode(
             @PathVariable String id,
-            @RequestParam(defaultValue = "300") int size) {
-        Certificate cert = certificateService.getCertificateById(id);
+            @RequestParam(defaultValue = "300") int size,
+            Authentication authentication) {
+        Certificate cert = certificateService.getCertificateForCaller(id, authentication.getName());
         byte[] imageBytes = certificateService.generateQrCodeImage(cert.getQrToken(), size, size);
 
         return ResponseEntity.ok()

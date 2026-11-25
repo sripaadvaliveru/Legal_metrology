@@ -61,8 +61,11 @@ public class ApplicationController {
 
     @GetMapping("/by-instrument/{instrumentId}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<List<ApplicationResponse>> getApplicationsByInstrument(@PathVariable String instrumentId) {
-        List<Application> applications = applicationService.getApplicationsByInstrumentId(instrumentId);
+    public ResponseEntity<List<ApplicationResponse>> getApplicationsByInstrument(
+            @PathVariable String instrumentId,
+            Authentication authentication) {
+        List<Application> applications = applicationService.getApplicationsByInstrumentForCaller(
+                instrumentId, authentication.getName());
         List<ApplicationResponse> applicationResponses = applications.stream()
                 .map(this::applicationToResponse)
                 .collect(Collectors.toList());
@@ -71,8 +74,8 @@ public class ApplicationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<ApplicationResponse> getApplication(@PathVariable String id) {
-        Application application = applicationService.getApplicationById(id);
+    public ResponseEntity<ApplicationResponse> getApplication(@PathVariable String id, Authentication authentication) {
+        Application application = applicationService.getApplicationForCaller(id, authentication.getName());
         return ResponseEntity.ok(applicationToResponse(application));
     }
 
@@ -103,8 +106,10 @@ public class ApplicationController {
 
     @GetMapping("/{id}/history")
     @PreAuthorize("hasAnyRole('BUSINESS', 'LMO', 'GATC', 'DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
-    public ResponseEntity<List<ApplicationStatusHistory>> getApplicationHistory(@PathVariable String id) {
-        return ResponseEntity.ok(applicationService.getApplicationHistory(id));
+    public ResponseEntity<List<ApplicationStatusHistory>> getApplicationHistory(
+            @PathVariable String id,
+            Authentication authentication) {
+        return ResponseEntity.ok(applicationService.getApplicationHistoryForCaller(id, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")

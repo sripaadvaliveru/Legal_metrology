@@ -9,9 +9,12 @@ import com.legalmetrology.entities.Application;
 import com.legalmetrology.entities.Certificate;
 import com.legalmetrology.entities.Inspection;
 import com.legalmetrology.entities.Instrument;
+import com.legalmetrology.entities.User;
 import com.legalmetrology.enums.CertificateStatus;
+import com.legalmetrology.enums.Role;
 import com.legalmetrology.repositories.CertificateRepository;
 import com.legalmetrology.repositories.InspectionRepository;
+import com.legalmetrology.repositories.UserRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
@@ -33,6 +36,7 @@ public class CertificateService {
 
     private final CertificateRepository certificateRepository;
     private final InspectionRepository inspectionRepository;
+    private final UserRepository userRepository;
 
     @Value("${app.frontend-url:https://legal-metrology-frontend.vercel.app}")
     private String frontendUrl;
@@ -47,6 +51,54 @@ public class CertificateService {
     public Certificate getCertificateByNumber(String number) {
         return certificateRepository.findByCertificateNumber(number)
                 .orElseThrow(() -> new RuntimeException("Certificate not found"));
+    }
+
+    /**
+     * Read a certificate on behalf of an authenticated principal. LMO / GATC / officers and
+     * admins need every certificate for their work; a BUSINESS caller is limited to the same
+     * set GET /certificates/my returns (their business or their own application).
+     */
+    @Transactional(readOnly = true)
+    public Certificate getCertificateForCaller(String id, String callerEmail) {
+        Certificate certificate = getCertificateById(id);
+        User caller = requireCaller(callerEmail);
+        if (caller.getRole() == Role.BUSINESS && !isOwnedBy(certificate, caller)) {
+            throw new RuntimeException("Certificate not found");
+        }
+        return certificate;
+    }
+
+    @Transactional(readOnly = true)
+    public Certificate getCertificateByNumberForCaller(String number, String callerEmail) {
+        Certificate certificate = getCertificateByNumber(number);
+        User caller = requireCaller(callerEmail);
+        if (caller.getRole() == Role.BUSINESS && !isOwnedBy(certificate, caller)) {
+            throw new RuntimeException("Certificate not found");
+        }
+        return certificate;
+    }
+
+    private User requireCaller(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Certificate not found"));
+    }
+
+    /** Mirrors CertificateRepository.findByBusinessIdOrUserId so the two rules cannot drift. */
+    private boolean isOwnedBy(Certificate certificate, User caller) {
+        if (caller.getBusiness() != null
+                && certificate.getInstrument() != null
+                && certificate.getInstrument().getEstablishment() != null
+                && certificate.getInstrument().getEstablishment().getBusiness() != null
+                && caller.getBusiness().getId().equals(
+                        certificate.getInstrument().getEstablishment().getBusiness().getId())) {
+            return true;
+        }
+        return certificate.getInspection() != null
+                && certificate.getInspection().getAppointment() != null
+                && certificate.getInspection().getAppointment().getApplication() != null
+                && certificate.getInspection().getAppointment().getApplication().getApplicant() != null
+                && caller.getId().equals(
+                        certificate.getInspection().getAppointment().getApplication().getApplicant().getId());
     }
 
     @Transactional(readOnly = true)

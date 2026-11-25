@@ -5,6 +5,7 @@ import com.legalmetrology.dto.ScheduleRequest;
 import com.legalmetrology.entities.*;
 import com.legalmetrology.enums.ApplicationStatus;
 import com.legalmetrology.enums.AppointmentStatus;
+import com.legalmetrology.enums.Role;
 import com.legalmetrology.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -84,6 +85,43 @@ public class ApplicationService {
     public Application getApplicationById(String id) {
         return applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
+    }
+
+    /**
+     * Read an application on behalf of an authenticated principal. LMO / GATC / officers and
+     * admins need the whole picture to do their jobs; a BUSINESS caller only sees applications
+     * they filed, matching GET /api/applications and the dashboard's pending count.
+     */
+    @Transactional(readOnly = true)
+    public Application getApplicationForCaller(String id, String callerEmail) {
+        Application application = getApplicationById(id);
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+        if (caller.getRole() == Role.BUSINESS && !isApplicant(application, caller)) {
+            throw new RuntimeException("Application not found");
+        }
+        return application;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Application> getApplicationsByInstrumentForCaller(String instrumentId, String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Application> applications = applicationRepository.findByInstrumentId(instrumentId);
+        if (caller.getRole() == Role.BUSINESS) {
+            return applications.stream().filter(a -> isApplicant(a, caller)).toList();
+        }
+        return applications;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApplicationStatusHistory> getApplicationHistoryForCaller(String id, String callerEmail) {
+        Application application = getApplicationForCaller(id, callerEmail);
+        return statusHistoryRepository.findByApplicationIdOrderByTimestampAsc(application.getId());
+    }
+
+    private boolean isApplicant(Application application, User caller) {
+        return application.getApplicant() != null && caller.getId().equals(application.getApplicant().getId());
     }
 
     @Transactional
@@ -197,8 +235,9 @@ public class ApplicationService {
     public void deleteApplication(String applicationId, String userEmail) {
         Application application = getApplicationById(applicationId);
 
-        if (!application.getApplicant().getEmail().equals(userEmail)) {
-            throw new RuntimeException("You can only delete your own applications");
+        // Same error as a nonexistent ID, so a caller cannot probe which applications exist.
+        if (application.getApplicant() == null || !application.getApplicant().getEmail().equals(userEmail)) {
+            throw new RuntimeException("Application not found");
         }
 
         ApplicationStatus status = application.getStatus();
