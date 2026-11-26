@@ -115,7 +115,7 @@ export default function RegisterScreen({ navigation }: any) {
               </View>
               <View style={styles.halfField}>
                 <Text style={styles.label}>District</Text>
-                <TextInput ref={districtRef} style={styles.input} value={district} onChangeText={setDistrict} placeholder="e.g. Hyderabad" returnKeyType="next" onSubmitEditing={() => cityRef.current?.focus()} />
+                <TextInput ref={districtRef} style={styles.input} value={district} onChangeText={setDistrict} placeholder="e.g. RangaReddy" returnKeyType="next" onSubmitEditing={() => cityRef.current?.focus()} />
               </View>
             </View>
 
