@@ -1,5 +1,6 @@
 package com.legalmetrology.services;
 
+import com.legalmetrology.dto.AnalyticsTrends;
 import com.legalmetrology.dto.DashboardKPIs;
 import com.legalmetrology.dto.DashboardKPIs.RecentActivity;
 import com.legalmetrology.entities.Business;
@@ -15,9 +16,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -303,5 +307,53 @@ public class AnalyticsService {
                             .build());
                 });
         builder.recentActivity(activities);
+    }
+
+    /** Chart data for the admin analytics page. */
+    public AnalyticsTrends getTrends() {
+        YearMonth now = YearMonth.now();
+        Map<YearMonth, Long> verificationsByMonth = certificateRepository.findAll().stream()
+                .filter(c -> c.getVerificationDate() != null)
+                .collect(Collectors.groupingBy(
+                        c -> YearMonth.from(c.getVerificationDate()),
+                        LinkedHashMap::new,
+                        Collectors.counting()));
+
+        List<AnalyticsTrends.MonthlyCount> monthly = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            YearMonth month = now.minusMonths(i);
+            monthly.add(AnalyticsTrends.MonthlyCount.builder()
+                    .month(month.format(DateTimeFormatter.ofPattern("MMM uuuu")))
+                    .count(verificationsByMonth.getOrDefault(month, 0L))
+                    .build());
+        }
+
+        return AnalyticsTrends.builder()
+                .monthlyVerifications(monthly)
+                .applicationStatuses(countBy(
+                        applicationRepository.findAll().stream()
+                                .map(a -> a.getStatus() == null ? "UNKNOWN" : a.getStatus().name())
+                                .toList()))
+                .instrumentStatuses(countBy(
+                        instrumentRepository.findAll().stream()
+                                .map(i -> i.getStatus() == null ? "UNKNOWN" : i.getStatus().name())
+                                .toList()))
+                .jurisdictionDistribution(countBy(
+                        instrumentRepository.findAll().stream()
+                                .map(i -> i.getEstablishment() != null
+                                        && i.getEstablishment().getJurisdiction() != null
+                                        && i.getEstablishment().getJurisdiction().getName() != null
+                                        ? i.getEstablishment().getJurisdiction().getName()
+                                        : "Unassigned")
+                                .toList()))
+                .build();
+    }
+
+    private List<AnalyticsTrends.NameCount> countBy(List<String> values) {
+        return values.stream()
+                .collect(Collectors.groupingBy(v -> v, LinkedHashMap::new, Collectors.counting()))
+                .entrySet().stream()
+                .map(e -> AnalyticsTrends.NameCount.builder().name(e.getKey()).count(e.getValue()).build())
+                .toList();
     }
 }

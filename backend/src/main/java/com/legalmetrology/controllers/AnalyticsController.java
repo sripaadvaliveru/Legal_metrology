@@ -1,5 +1,6 @@
 package com.legalmetrology.controllers;
 
+import com.legalmetrology.dto.AnalyticsTrends;
 import com.legalmetrology.dto.DashboardKPIs;
 import com.legalmetrology.entities.User;
 import com.legalmetrology.repositories.UserRepository;
@@ -27,5 +28,11 @@ public class AnalyticsController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         DashboardKPIs kpis = analyticsService.getDashboardKPIs(user);
         return ResponseEntity.ok(kpis);
+    }
+
+    @GetMapping("/trends")
+    @PreAuthorize("hasAnyRole('DISTRICT_OFFICER', 'STATE_OFFICER', 'SUPER_ADMIN')")
+    public ResponseEntity<AnalyticsTrends> getTrends() {
+        return ResponseEntity.ok(analyticsService.getTrends());
     }
 }
