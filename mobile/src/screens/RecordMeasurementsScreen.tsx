@@ -5,6 +5,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { inspectionApi, appointmentApi, checklistApi } from '../services/api';
 import { fetchAndCacheChecklists } from '../services/offlineHelpers';
+import { queueMeasurements, queueGpsUpdate } from '../services/syncService';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import EvidenceCapture from '../components/EvidenceCapture';
 
 interface MeasurementItem {
@@ -22,6 +24,7 @@ interface ChecklistItem {
 
 export default function RecordMeasurementsScreen({ route, navigation }: any) {
   const { inspectionId } = route.params ?? {};
+  const isOnline = useOnlineStatus();
 
   const { data: inspection } = useQuery({
     queryKey: ['inspection', inspectionId],
@@ -76,13 +79,25 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
           withinTolerance: undefined,
           remarks: m.remarks || undefined,
         }));
-      await inspectionApi.recordMeasurements(inspectionId, readings, template?.id);
+      if (isOnline) {
+        try {
+          await inspectionApi.recordMeasurements(inspectionId, readings, template?.id);
+          return 'synced';
+        } catch {
+          // Network dropped mid-inspection - keep the readings for later sync.
+        }
+      }
+      await queueMeasurements(inspectionId, readings, template?.id);
+      return 'queued';
     },
-    onSuccess: () => {
+    onSuccess: (status) => {
+      if (status === 'queued') {
+        Alert.alert('Saved Offline', 'Measurements will sync automatically when you are back online.');
+      }
       navigation.navigate('InspectionReview', { inspectionId });
     },
     onError: (err: any) => {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to record measurements');
+      Alert.alert('Error', err.response?.data?.message || 'Failed to save measurements');
     },
   });
 
@@ -96,13 +111,19 @@ export default function RecordMeasurementsScreen({ route, navigation }: any) {
       }
       const location = await Location.getCurrentPositionAsync({});
       setGpsCoords({ lat: location.coords.latitude, lng: location.coords.longitude });
+      let queued = false;
       try {
+        if (!isOnline) throw new Error('offline');
         await inspectionApi.updateGps(inspectionId, location.coords.latitude, location.coords.longitude);
       } catch {
-        Alert.alert('Warning', 'GPS captured but failed to save to server. You can continue.');
-        return;
+        await queueGpsUpdate(inspectionId, location.coords.latitude, location.coords.longitude);
+        queued = true;
       }
-      Alert.alert('GPS Captured', `Lat: ${location.coords.latitude.toFixed(6)}, Lng: ${location.coords.longitude.toFixed(6)}`);
+      Alert.alert(
+        'GPS Captured',
+        `Lat: ${location.coords.latitude.toFixed(6)}, Lng: ${location.coords.longitude.toFixed(6)}`
+          + (queued ? ' (will sync when online)' : '')
+      );
     } catch {
       Alert.alert('GPS Error', 'Failed to capture location. Make sure GPS is enabled on your device.');
     } finally {

@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { applicationApi } from '../services/api';
+import { fetchAndCacheApplications } from '../services/offlineHelpers';
 import Badge, { getStatusVariant } from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
@@ -15,7 +16,7 @@ export default function ApplicationsScreen({ navigation }: any) {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const { data: applications, isLoading, refetch, isError } = useQuery({
     queryKey: ['my-applications'],
-    queryFn: () => applicationApi.list().then(res => res.data),
+    queryFn: () => fetchAndCacheApplications(() => applicationApi.list().then(res => res.data)),
   });
 
   const filtered = applications?.filter((app: Application) => {

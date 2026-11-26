@@ -3,11 +3,14 @@ import { View, Text, Image, TouchableOpacity, FlatList, Alert, StyleSheet } from
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { evidenceApi, inspectionApi } from '../services/api';
+import { queueEvidenceCapture, queueEvidenceUrl } from '../services/syncService';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 interface EvidenceItem {
   uri: string;
   uploading: boolean;
   uploaded: boolean;
+  queued?: boolean;
   url?: string;
 }
 
@@ -18,6 +21,7 @@ interface Props {
 }
 
 export default function EvidenceCapture({ inspectionId, existingUrls = [], onEvidenceAdded }: Props) {
+  const isOnline = useOnlineStatus();
   const [evidence, setEvidence] = useState<EvidenceItem[]>(
     existingUrls.map(url => ({ uri: url, uploading: false, uploaded: true, url }))
   );
@@ -52,12 +56,15 @@ export default function EvidenceCapture({ inspectionId, existingUrls = [], onEvi
     const newItem: EvidenceItem = { uri: asset.uri, uploading: true, uploaded: false };
     setEvidence(prev => [...prev, newItem]);
 
-    try {
-      const formData = new FormData();
-      const filename = asset.uri.split('/').pop() || 'photo.jpg';
-      const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
-      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+    const filename = asset.uri.split('/').pop() || 'photo.jpg';
+    const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+    const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+    let uploadedUrl: string | undefined;
 
+    try {
+      if (!isOnline) throw new Error('offline');
+
+      const formData = new FormData();
       formData.append('file', {
         uri: asset.uri,
         name: filename,
@@ -65,7 +72,7 @@ export default function EvidenceCapture({ inspectionId, existingUrls = [], onEvi
       } as any);
 
       const uploadRes = await evidenceApi.upload(formData);
-      const uploadedUrl = uploadRes.data.url;
+      uploadedUrl = uploadRes.data.url;
 
       await inspectionApi.addEvidence(inspectionId, uploadedUrl);
 
@@ -75,8 +82,25 @@ export default function EvidenceCapture({ inspectionId, existingUrls = [], onEvi
 
       onEvidenceAdded?.(uploadedUrl);
     } catch (err) {
-      setEvidence(prev => prev.filter(e => e.uri !== asset.uri));
-      Alert.alert('Upload Failed', 'Failed to upload photo. Please try again.');
+      // Keep the photo in the queue so field evidence is never lost offline.
+      try {
+        if (uploadedUrl) {
+          await queueEvidenceUrl(inspectionId, uploadedUrl);
+        } else {
+          await queueEvidenceCapture(inspectionId, {
+            localUri: asset.uri,
+            name: filename,
+            type: mimeType,
+          });
+        }
+        setEvidence(prev => prev.map(e =>
+          e.uri === asset.uri ? { ...e, uploading: false, uploaded: false, queued: true } : e
+        ));
+        Alert.alert('Saved Offline', 'Photo will be uploaded and linked when you are back online.');
+      } catch {
+        setEvidence(prev => prev.filter(e => e.uri !== asset.uri));
+        Alert.alert('Upload Failed', 'Failed to save photo. Please try again.');
+      }
     }
   };
 
@@ -123,6 +147,11 @@ export default function EvidenceCapture({ inspectionId, existingUrls = [], onEvi
               {item.uploaded && (
                 <View style={styles.checkBadge}>
                   <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                </View>
+              )}
+              {item.queued && (
+                <View style={styles.checkBadge}>
+                  <Ionicons name="cloud-upload-outline" size={20} color="#f59e0b" />
                 </View>
               )}
               <TouchableOpacity

@@ -3,20 +3,34 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
 import { inspectionApi } from '../services/api';
+import { queueInspectionSubmission } from '../services/syncService';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 export default function SubmitInspectionScreen({ route, navigation }: any) {
   const { inspectionId } = route.params ?? {};
+  const isOnline = useOnlineStatus();
   const [result, setResult] = useState<'PASS' | 'FAIL' | null>(null);
   const [remarks, setRemarks] = useState('');
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      await inspectionApi.submit(inspectionId, result!, remarks || undefined);
+      if (isOnline) {
+        try {
+          await inspectionApi.submit(inspectionId, result!, remarks || undefined);
+          return 'synced';
+        } catch {
+          // Submission must not be lost if the connection drops.
+        }
+      }
+      await queueInspectionSubmission(inspectionId, result!, remarks || undefined);
+      return 'queued';
     },
-    onSuccess: () => {
-      const msg = result === 'PASS'
-        ? 'Inspection passed! Certificate has been generated.'
-        : 'Inspection submitted as failed.';
+    onSuccess: (status) => {
+      const msg = status === 'queued'
+        ? 'Inspection saved offline. It will be submitted and processed when you are back online.'
+        : result === 'PASS'
+          ? 'Inspection passed! Certificate has been generated.'
+          : 'Inspection submitted as failed.';
       Alert.alert('Submitted', msg, [
         { text: 'OK', onPress: () => navigation.popToTop() },
       ]);
