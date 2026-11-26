@@ -42,6 +42,12 @@ server:
 evidence:
   upload-dir: ${EVIDENCE_UPLOAD_DIR:uploads}
 
+# Background jobs
+app:
+  expiry:
+    # Daily at 06:00 server time - updates expired certificates and sends 90/30/7/0-day reminders
+    cron: ${EXPIRY_CRON:0 0 6 * * *}
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:sih2026-legal-metrology-jwt-secret-key-that-is-long-enough-for-hs256}

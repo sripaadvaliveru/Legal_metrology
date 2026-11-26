@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,8 @@ public interface CertificateRepository extends JpaRepository<Certificate, String
     Optional<Certificate> findByQrToken(String qrToken);
     List<Certificate> findByInstrumentId(String instrumentId);
     List<Certificate> findByStatus(CertificateStatus status);
+    List<Certificate> findByStatusAndValidUntilBetween(CertificateStatus status, LocalDate from, LocalDate to);
+    List<Certificate> findByStatusAndValidUntilBefore(CertificateStatus status, LocalDate date);
 
     @Query("SELECT c FROM Certificate c WHERE c.instrument.establishment.business.id = :businessId")
     List<Certificate> findByBusinessId(@Param("businessId") String businessId);
