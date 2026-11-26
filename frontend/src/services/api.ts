@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs, InstrumentType, ChecklistTemplate, Jurisdiction } from '@/types';
+import type { AuthResponse, User, Instrument, Application, Assignment, Certificate, Notification, DashboardKPIs, AnalyticsTrends, AuditLog, Violation, InstrumentType, ChecklistTemplate, Jurisdiction } from '@/types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
@@ -119,6 +119,7 @@ export const notificationApi = {
 // Analytics
 export const analyticsApi = {
   dashboard: () => api.get<DashboardKPIs>('/analytics/dashboard'),
+  trends: () => api.get<AnalyticsTrends>('/analytics/trends'),
 };
 
 // Users (admin)
@@ -150,6 +151,15 @@ export const instrumentTypeApi = {
 // than a free-text jurisdiction ID box)
 export const jurisdictionApi = {
   list: () => api.get<Jurisdiction[]>('/jurisdictions'),
+};
+
+// Audit & enforcement (admin)
+export const auditApi = {
+  list: () => api.get<AuditLog[]>('/audit'),
+};
+
+export const enforcementApi = {
+  violations: () => api.get<Violation[]>('/enforcement/violations'),
 };
 
 // Checklist Templates

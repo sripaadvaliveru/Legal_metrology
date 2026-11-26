@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
@@ -7,12 +8,21 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import BusinessDashboard from '@/modules/user/BusinessDashboard';
 import LmoDashboard from '@/modules/lmo/LmoDashboard';
 import GatcDashboard from '@/modules/gatc/GatcDashboard';
-import AdminDashboard from '@/modules/admin/AdminDashboard';
 import ApplicationsReview from '@/modules/admin/ApplicationsReview';
 import AssignmentPanel from '@/modules/admin/AssignmentPanel';
 import ScheduleAppointment from '@/modules/admin/ScheduleAppointment';
 import RulesChecklists from '@/modules/admin/RulesChecklists';
 import UserManagement from '@/modules/admin/UserManagement';
+// Chart-heavy and admin-only views are loaded on demand to keep the initial
+// bundle small for business/LMO users.
+const AdminDashboard = lazy(() => import('@/modules/admin/AdminDashboard'));
+const AnalyticsPage = lazy(() => import('@/modules/admin/AnalyticsPage'));
+const AuditLogPage = lazy(() => import('@/modules/admin/AuditLogPage'));
+const EnforcementPage = lazy(() => import('@/modules/admin/EnforcementPage'));
+const JurisdictionsPage = lazy(() => import('@/modules/admin/JurisdictionsPage'));
+const DistrictsPage = lazy(() => import('@/modules/admin/DistrictsPage'));
+const RolesPage = lazy(() => import('@/modules/admin/RolesPage'));
+const NotificationsPage = lazy(() => import('@/modules/user/NotificationsPage'));
 import CertificatesView from '@/modules/user/CertificatesView';
 import AssignedTests from '@/modules/gatc/AssignedTests';
 import TestDetail from '@/modules/gatc/TestDetail';
@@ -85,7 +95,7 @@ function AppRoutes() {
           <ProtectedRoute allowedRoles={['BUSINESS', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><CertificatesView /></ProtectedRoute>
         } />
         <Route path="notifications" element={
-          <ProtectedRoute allowedRoles={['BUSINESS', 'LMO', 'GATC', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><BusinessDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['BUSINESS', 'LMO', 'GATC', 'SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><NotificationsPage /></ProtectedRoute>
         } />
 
         {/* LMO & Admin routes */}
@@ -119,28 +129,28 @@ function AppRoutes() {
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
         } />
         <Route path="analytics" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AnalyticsPage /></ProtectedRoute>
         } />
         <Route path="enforcement" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><EnforcementPage /></ProtectedRoute>
         } />
         <Route path="users" element={
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><UserManagement /></ProtectedRoute>
         } />
         <Route path="roles" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><RolesPage /></ProtectedRoute>
         } />
         <Route path="districts" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><DistrictsPage /></ProtectedRoute>
         } />
         <Route path="jurisdictions" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><JurisdictionsPage /></ProtectedRoute>
         } />
         <Route path="rules" element={
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><RulesChecklists /></ProtectedRoute>
         } />
         <Route path="audit" element={
-          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'DISTRICT_OFFICER', 'STATE_OFFICER']}><AuditLogPage /></ProtectedRoute>
         } />
       </Route>
 
@@ -154,7 +164,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <AppRoutes />
+          <Suspense fallback={<div className="flex h-screen items-center justify-center text-gray-500">Loading...</div>}>
+            <AppRoutes />
+          </Suspense>
           <Toaster position="top-right" />
         </BrowserRouter>
       </AuthProvider>

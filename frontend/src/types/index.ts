@@ -133,6 +133,33 @@ export interface RecentActivity {
   status: string;
 }
 
+export interface AnalyticsTrends {
+  monthlyVerifications: { month: string; count: number }[];
+  applicationStatuses: { name: string; count: number }[];
+  instrumentStatuses: { name: string; count: number }[];
+  jurisdictionDistribution: { name: string; count: number }[];
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  oldValue?: string;
+  newValue?: string;
+  reason?: string;
+  timestamp: string;
+}
+
+export interface Violation {
+  id: string;
+  violationType: string;
+  description?: string;
+  status: 'REPORTED' | 'UNDER_INVESTIGATION' | 'RESOLVED' | 'DISMISSED';
+  reportDate?: string;
+  instrument?: { instrumentId?: string; serialNumber?: string } | null;
+}
+
 export interface InstrumentType {
   id: string;
   name: string;

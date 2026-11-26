@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { analyticsApi } from '@/services/api';
 import { BarChart3, Building2, Package, FileText, Users, Loader2 } from 'lucide-react';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -57,9 +58,31 @@ export default function AdminDashboard() {
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg border p-6">
-              <h2 className="text-lg font-semibold mb-4">Monthly Verification Trend</h2>
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                Chart placeholder — will use Recharts
+              <h2 className="text-lg font-semibold mb-4">Compliance Overview</h2>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Verified', value: kpis?.verifiedInstruments ?? 0 },
+                        { name: 'Expired', value: kpis?.expiredInstruments ?? 0 },
+                        { name: 'Other', value: Math.max(0, (kpis?.totalInstruments ?? 0) - (kpis?.verifiedInstruments ?? 0) - (kpis?.expiredInstruments ?? 0)) },
+                      ].filter(item => item.value > 0)}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      <Cell fill="#10b981" />
+                      <Cell fill="#ef4444" />
+                      <Cell fill="#d1d5db" />
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
