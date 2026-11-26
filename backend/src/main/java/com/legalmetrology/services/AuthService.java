@@ -10,11 +10,13 @@ import com.legalmetrology.repositories.BusinessRepository;
 import com.legalmetrology.repositories.JurisdictionRepository;
 import com.legalmetrology.repositories.EstablishmentRepository;
 import com.legalmetrology.repositories.UserRepository;
+import com.legalmetrology.security.CustomUserDetailsService;
 import com.legalmetrology.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final CustomUserDetailsService userDetailsService;
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
     private final EstablishmentRepository establishmentRepository;
@@ -64,6 +67,32 @@ public class AuthService {
                 .token(token)
                 .refreshToken(refreshToken)
                 .user(userResponse)
+                .build();
+    }
+
+    /**
+     * Exchanges a valid refresh token for a fresh access token. Refresh tokens carry a
+     * "type=refresh" claim, so access tokens cannot be used here.
+     */
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        if (refreshToken == null || !tokenProvider.validateToken(refreshToken)
+                || !tokenProvider.isRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+
+        String email = tokenProvider.getUsernameFromToken(refreshToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        if (!userDetails.isEnabled()) {
+            throw new RuntimeException("User account is inactive");
+        }
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+
+        return AuthResponse.builder()
+                .token(tokenProvider.generateAccessToken(authentication))
+                .refreshToken(refreshToken)
+                .user(getCurrentUser(email))
                 .build();
     }
 

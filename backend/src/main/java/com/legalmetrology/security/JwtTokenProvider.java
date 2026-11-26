@@ -70,4 +70,17 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    /**
+     * Distinguishes refresh tokens from access tokens so an access token cannot be
+     * exchanged for a new token pair at /api/auth/refresh.
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            return "refresh".equals(claims.get("type", String.class));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
 }
